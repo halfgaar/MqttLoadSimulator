@@ -1,0 +1,108 @@
+#include "oneclient.h"
+#include "utils.h"
+#include "iostream"
+
+
+OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString &password, bool pub_and_sub, int clientNr, QString &clientIdPart, QObject *parent) :
+    QObject(parent),
+    client_id(QString("mqtt_load_tester_%1_%2_%3").arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
+    clientNr(clientNr),
+    pub_and_sub(pub_and_sub),
+    publishTimer(this)
+{
+
+    client.setClientId(client_id);
+    client.setHostName(hostname);
+    client.setUsername(username);
+    client.setPassword(password.toLatin1());
+    client.setPort(port);
+
+    connect(&client, &QMQTT::Client::connected, this, &OneClient::connected);
+    connect(&client, &QMQTT::Client::disconnected, this, &OneClient::onDisconnect);
+    connect(&client, &QMQTT::Client::error, this, &OneClient::onClientError);
+
+    int interval = (qrand() % 3000) + 1000;
+
+    publishTimer.setInterval(interval);
+    publishTimer.setSingleShot(false);
+    connect(&publishTimer, &QTimer::timeout, this, &OneClient::onPublishTimerTimeout);
+
+    reconnectTimer.setInterval(interval + 1000);
+    reconnectTimer.setSingleShot(true);
+    connect(&reconnectTimer, &QTimer::timeout, this, &OneClient::connectToHost);
+}
+
+OneClient::~OneClient()
+{
+    client.disconnectFromHost();
+}
+
+void OneClient::connectToHost()
+{
+    if (!client.isConnectedToHost())
+    {
+        std::cout << "Connecting...\n";
+        client.connectToHost();
+    }
+}
+
+void OneClient::connected()
+{
+    //QMQTT::Client *sender = static_cast<QMQTT::Client *>(this->sender());
+    std::cout << "Connected.\n";
+
+    if (this->pub_and_sub)
+    {
+        QString topic = QString("/loadtester/%1/#").arg(this->clientNr - 1);
+        std::cout << qPrintable(QString("Subscribing to '%1'\n").arg(topic));
+        client.subscribe(topic);
+        publishTimer.start();
+    }
+    else
+    {
+        QString ran = GetRandomString();
+        QString topic = QString("/silentpath/%1/#").arg(ran);
+        std::cout << qPrintable(QString("Subscribing to '%1'\n").arg(topic));
+        client.subscribe(topic);
+    }
+}
+
+void OneClient::onDisconnect()
+{
+    QString msg = QString("Client %1 disconnected\n").arg(this->client_id);
+    std::cout << msg.toLatin1().toStdString().data();
+}
+
+void OneClient::onClientError(const QMQTT::ClientError error)
+{
+    // TODO: arg, doesn't qmqtt have a better way for this?
+    QString errStr = QString("unknown error");
+    if (error == QMQTT::SocketConnectionRefusedError)
+        errStr = "Connection refused";
+    if (error == QMQTT::SocketRemoteHostClosedError)
+        errStr = "Remote host closed";
+    if (error == QMQTT::SocketHostNotFoundError)
+        errStr = "Remote host not found";
+    if (error == QMQTT::MqttBadUserNameOrPasswordError)
+        errStr = "MQTT bad user or password";
+    if (error == QMQTT::MqttNotAuthorizedError)
+        errStr = "MQTT not authorized";
+
+    QString msg = QString("Client %1 error code: %2 (%3). Initiated delayed reconnect.\n").arg(this->client_id).arg(error).arg(errStr);
+    std::cerr << msg.toLatin1().toStdString().data();
+
+    this->reconnectTimer.start();
+
+}
+
+void OneClient::onPublishTimerTimeout()
+{
+    //QTimer *sender = static_cast<QTimer*>(this->sender());
+
+    for (int i = 0; i < 25; i++)
+    {
+        QString payload = QString("Client %1 publish counter: %2").arg(client_id).arg(this->publish_counter++);
+        QMQTT::Message msg(0, QString("/loadtester/%1/hellofromtheloadtester").arg(this->clientNr), payload.toUtf8());
+        client.publish(msg);
+    }
+}
