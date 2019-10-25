@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     QCommandLineOption amountActiveOption("amount-active", "Amount of active clients. Required.", "amount");
     parser.addOption(amountActiveOption);
 
-    QCommandLineOption amountPassiveOption("amount-passive", "Amount of active clients. Required.", "amount");
+    QCommandLineOption amountPassiveOption("amount-passive", "Amount of passive clients with one silent subscription. Required.", "amount");
     parser.addOption(amountPassiveOption);
 
     QCommandLineOption usernameOption("username", "Username. DEFAULT: user", "username", "user");
