@@ -3,11 +3,25 @@
 #include <iostream>
 #include <QTimer>
 #include <QCommandLineParser>
+#include <QProcess>
 
+#ifdef Q_OS_LINUX
+#include <sys/resource.h>
+#endif
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
+
+#ifdef Q_OS_LINUX
+    puts("Setting ulimit nofile to 100000.\n");
+    struct rlimit v = { 1000000, 1000000 };
+    if (setrlimit(RLIMIT_NOFILE, &v) != 0)
+    {
+        fputs(qPrintable("Can't set ulimit nofile to 1000000\n"), stderr);
+        return 1;
+    }
+#endif
 
     QCommandLineParser parser;
     parser.setApplicationDescription("MQTT load simulator. The active clients subscribe to the topics of every previous active clients.\nThe passive "

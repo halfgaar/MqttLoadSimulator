@@ -87,6 +87,8 @@ void OneClient::onClientError(const QMQTT::ClientError error)
         errStr = "MQTT bad user or password";
     if (error == QMQTT::MqttNotAuthorizedError)
         errStr = "MQTT not authorized";
+    if (error == QMQTT::SocketResourceError)
+        errStr = "Socket resource error. Is your OS limiting you? Ulimit, etc?";
 
     QString msg = QString("Client %1 error code: %2 (%3). Initiated delayed reconnect.\n").arg(this->client_id).arg(error).arg(errStr);
     std::cerr << msg.toLatin1().toStdString().data();
