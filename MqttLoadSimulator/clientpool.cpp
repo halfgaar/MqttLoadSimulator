@@ -1,7 +1,9 @@
 #include "clientpool.h"
 #include <QDateTime>
+#include <QThread>
 
-ClientPool::ClientPool(QString hostname, quint16 port, QString username, QString password, bool pub_and_sub, int amount, QString clientIdPart, QObject *parent) : QObject(parent)
+ClientPool::ClientPool(QString hostname, quint16 port, QString username, QString password, bool pub_and_sub, int amount, QString clientIdPart,
+                       uint delay, QObject *parent) : QObject(parent), delay(delay)
 {
     //qsrand(static_cast<uint>(QDateTime::currentMSecsSinceEpoch()));
 
@@ -22,5 +24,7 @@ void ClientPool::startClients()
     foreach (OneClient *client, clients)
     {
         client->connectToHost();
+        if (delay > 0)
+            QThread::msleep(static_cast<unsigned long>(delay));
     }
 }

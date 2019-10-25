@@ -48,6 +48,9 @@ int main(int argc, char *argv[])
     QCommandLineOption passwordOption("password", "Password. DEFAULT: password", "username", "user");
     parser.addOption(passwordOption);
 
+    QCommandLineOption clientStartupDelayOption("delay", "Wait <ms> milliseconds between each connecting client", "ms", "0");
+    parser.addOption(clientStartupDelayOption);
+
     parser.process(a);
 
     if (!parser.isSet(hostnameOption))
@@ -90,14 +93,27 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    uint delay = 0;
+
+    if (parser.isSet(clientStartupDelayOption))
+    {
+        delay = parser.value(clientStartupDelayOption).toUInt(&parsed);
+        if (!parsed)
+        {
+            fputs(qPrintable("delay is not a positive number\n"), stderr);
+            return 1;
+        }
+
+    }
+
     qsrand(static_cast<uint>(QDateTime::currentMSecsSinceEpoch()));
 
     QString hostname = parser.value(hostnameOption);
 
-    ClientPool poolActive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), true, amountActive, "active", &a);
+    ClientPool poolActive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), true, amountActive, "active", delay, &a);
     poolActive.startClients();
 
-    ClientPool poolPassive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), false, amountPassive, "passive", &a);
+    ClientPool poolPassive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), false, amountPassive, "passive", delay, &a);
     poolPassive.startClients();
 
     return a.exec();
