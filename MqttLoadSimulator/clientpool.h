@@ -11,7 +11,8 @@ class ClientPool : public QObject
     QList<OneClient*> clients;
     uint delay;
 public:
-    explicit ClientPool(QString hostname, quint16 port, QString username, QString password, bool pub_and_sub, int amount, QString clientIdPart, uint delay, QObject *parent = nullptr);
+    explicit ClientPool(QString hostname, quint16 port, QString username, QString password, bool pub_and_sub, int amount, QString clientIdPart,
+                        uint delay, bool ssl, QObject *parent = nullptr);
     ~ClientPool();
 
 

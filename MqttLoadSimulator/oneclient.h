@@ -14,7 +14,7 @@ class OneClient : public QObject
     bool pub_and_sub = false;
     QTimer publishTimer;
 
-    QMQTT::Client client;
+    QMQTT::Client *client;
     QTimer reconnectTimer;
 
 private slots:
@@ -24,7 +24,8 @@ private slots:
     void onClientError(const QMQTT::ClientError error);
     void onPublishTimerTimeout();
 public:
-    OneClient(QString &hostname, quint16 port, QString &username, QString &password, bool pub_and_sub, int clientNr, QString &clientIdPart, QObject *parent = nullptr);
+    OneClient(QString &hostname, quint16 port, QString &username, QString &password, bool pub_and_sub, int clientNr, QString &clientIdPart,
+              bool ssl, QObject *parent = nullptr);
     ~OneClient();
 
 public slots:

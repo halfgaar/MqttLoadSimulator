@@ -1,25 +1,36 @@
 #include "oneclient.h"
 #include "utils.h"
 #include "iostream"
+#include <QSslConfiguration>
 
-
-OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString &password, bool pub_and_sub, int clientNr, QString &clientIdPart, QObject *parent) :
+OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString &password, bool pub_and_sub, int clientNr, QString &clientIdPart,
+                     bool ssl, QObject *parent) :
     QObject(parent),
     client_id(QString("mqtt_load_tester_%1_%2_%3").arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
     clientNr(clientNr),
     pub_and_sub(pub_and_sub),
     publishTimer(this)
 {
+    if (ssl)
+    {
+        QSslConfiguration sslConfig = QSslConfiguration::defaultConfiguration();
+        sslConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
 
-    client.setClientId(client_id);
-    client.setHostName(hostname);
-    client.setUsername(username);
-    client.setPassword(password.toLatin1());
-    client.setPort(port);
+        this->client = new QMQTT::Client(hostname, port, sslConfig, true);
+    }
+    else
+    {
+        QHostAddress targetHost(hostname); // Ehm, why the difference in QMTT::Client's overloaded constructors?
+        this->client = new QMQTT::Client(targetHost, port);
+    }
 
-    connect(&client, &QMQTT::Client::connected, this, &OneClient::connected);
-    connect(&client, &QMQTT::Client::disconnected, this, &OneClient::onDisconnect);
-    connect(&client, &QMQTT::Client::error, this, &OneClient::onClientError);
+    client->setClientId(client_id);
+    client->setUsername(username);
+    client->setPassword(password.toLatin1());
+
+    connect(client, &QMQTT::Client::connected, this, &OneClient::connected);
+    connect(client, &QMQTT::Client::disconnected, this, &OneClient::onDisconnect);
+    connect(client, &QMQTT::Client::error, this, &OneClient::onClientError);
 
     int interval = (qrand() % 3000) + 1000;
 
@@ -34,15 +45,16 @@ OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString
 
 OneClient::~OneClient()
 {
-    client.disconnectFromHost();
+    client->disconnectFromHost();
+    delete client;
 }
 
 void OneClient::connectToHost()
 {
-    if (!client.isConnectedToHost())
+    if (!client->isConnectedToHost())
     {
         std::cout << "Connecting...\n";
-        client.connectToHost();
+        client->connectToHost();
     }
 }
 
@@ -55,7 +67,7 @@ void OneClient::connected()
     {
         QString topic = QString("/loadtester/%1/#").arg(this->clientNr - 1);
         std::cout << qPrintable(QString("Subscribing to '%1'\n").arg(topic));
-        client.subscribe(topic);
+        client->subscribe(topic);
         publishTimer.start();
     }
     else
@@ -63,7 +75,7 @@ void OneClient::connected()
         QString ran = GetRandomString();
         QString topic = QString("/silentpath/%1/#").arg(ran);
         std::cout << qPrintable(QString("Subscribing to '%1'\n").arg(topic));
-        client.subscribe(topic);
+        client->subscribe(topic);
     }
 }
 
@@ -105,6 +117,6 @@ void OneClient::onPublishTimerTimeout()
     {
         QString payload = QString("Client %1 publish counter: %2").arg(client_id).arg(this->publish_counter++);
         QMQTT::Message msg(0, QString("/loadtester/%1/hellofromtheloadtester").arg(this->clientNr), payload.toUtf8());
-        client.publish(msg);
+        client->publish(msg);
     }
 }

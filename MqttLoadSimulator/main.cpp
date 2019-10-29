@@ -33,8 +33,11 @@ int main(int argc, char *argv[])
     QCommandLineOption hostnameOption("hostname", "Hostname of target. Required.", "hostname");
     parser.addOption(hostnameOption);
 
-    QCommandLineOption portOption("port", "Target port. Default: 1883", "port", "1883");
+    QCommandLineOption portOption("port", "Target port. Default: 1883|8883", "port", "1883");
     parser.addOption(portOption);
+
+    QCommandLineOption sslOption("ssl", "Enable SSL. Always insecure mode.");
+    parser.addOption(sslOption);
 
     QCommandLineOption amountActiveOption("amount-active", "Amount of active clients. Required.", "amount");
     parser.addOption(amountActiveOption);
@@ -79,6 +82,18 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    bool ssl = false;
+
+    if (parser.isSet(sslOption))
+    {
+        ssl = true;
+
+        if (!parser.isSet(portOption))
+        {
+            port = 8883;
+        }
+    }
+
     int amountActive = parser.value(amountActiveOption).toInt(&parsed);
     if (!parsed)
     {
@@ -110,10 +125,10 @@ int main(int argc, char *argv[])
 
     QString hostname = parser.value(hostnameOption);
 
-    ClientPool poolActive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), true, amountActive, "active", delay, &a);
+    ClientPool poolActive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), true, amountActive, "active", delay, ssl, &a);
     poolActive.startClients();
 
-    ClientPool poolPassive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), false, amountPassive, "passive", delay, &a);
+    ClientPool poolPassive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), false, amountPassive, "passive", delay, ssl, &a);
     poolPassive.startClients();
 
     return a.exec();
