@@ -14,12 +14,12 @@ int main(int argc, char *argv[])
     QCoreApplication a(argc, argv);
 
 #ifdef Q_OS_LINUX
-    puts("Setting ulimit nofile to 100000.\n");
-    struct rlimit v = { 1000000, 1000000 };
+    rlim_t rlim = 1000000;
+    printf("Setting ulimit nofile to %ld.\n", rlim);
+    struct rlimit v = { rlim, rlim };
     if (setrlimit(RLIMIT_NOFILE, &v) != 0)
     {
-        fputs(qPrintable("Can't set ulimit nofile to 1000000\n"), stderr);
-        return 1;
+        fputs(qPrintable("WARNING: Changing ulimit failed.\n"), stderr);
     }
 #endif
 
