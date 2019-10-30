@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "iostream"
 #include <QSslConfiguration>
+#include <QHostInfo>
 
 OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString &password, bool pub_and_sub, int clientNr, QString &clientIdPart,
                      bool ssl, QObject *parent) :
@@ -20,7 +21,9 @@ OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString
     }
     else
     {
-        QHostAddress targetHost(hostname); // Ehm, why the difference in QMTT::Client's overloaded constructors?
+        // Ehm, why the difference in QMTT::Client's overloaded constructors for SSL and non-SSL?
+        QHostInfo info = QHostInfo::fromName(hostname);
+        QHostAddress targetHost = info.addresses().first();
         this->client = new QMQTT::Client(targetHost, port);
     }
 
