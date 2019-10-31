@@ -35,6 +35,7 @@ OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString
     connect(client, &QMQTT::Client::connected, this, &OneClient::connected);
     connect(client, &QMQTT::Client::disconnected, this, &OneClient::onDisconnect);
     connect(client, &QMQTT::Client::error, this, &OneClient::onClientError);
+    connect(client, &QMQTT::Client::received, this, &OneClient::onReceived);
 
     int interval = (qrand() % 3000) + 1000;
 
@@ -124,5 +125,13 @@ void OneClient::onPublishTimerTimeout()
         QString payload = QString("Client %1 publish counter: %2").arg(client_id).arg(this->publish_counter++);
         QMQTT::Message msg(0, QString("/loadtester/clientpool_%1/%2/hellofromtheloadtester").arg(this->clientPoolRandomId).arg(this->clientNr), payload.toUtf8());
         client->publish(msg);
+        this->publishCount++;
     }
+}
+
+void OneClient::onReceived(const QMQTT::Message &message)
+{
+    Q_UNUSED(message)
+    this->receivedCount++;
+    //std::cout << qPrintable(message.payload()) << std::endl;
 }
