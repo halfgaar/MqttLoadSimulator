@@ -7,10 +7,15 @@ ClientPool::ClientPool(QString hostname, quint16 port, QString username, QString
 {
     //qsrand(static_cast<uint>(QDateTime::currentMSecsSinceEpoch()));
 
+    connectNextBatchTimer.setSingleShot(true);
+    connectNextBatchTimer.setInterval(static_cast<int>(delay));
+    connect(&connectNextBatchTimer, &QTimer::timeout, this, &ClientPool::startClients);
+
     for (int i = 0; i < amount; i++)
     {
         OneClient *oneClient = new OneClient(hostname, port, username, password, pub_and_sub, i, clientIdPart, ssl, parent);
         clients.append(oneClient);
+        clientsToConnect.push(oneClient);
     }
 }
 
@@ -21,10 +26,29 @@ ClientPool::~ClientPool()
 
 void ClientPool::startClients()
 {
-    foreach (OneClient *client, clients)
+    uint breakAfter = 1;
+    uint i = 0;
+
+    if (delay > 0 && delay < 500)
     {
+        breakAfter = 500 / delay; // 500 is arbritrary...
+    }
+
+    while(!this->clientsToConnect.empty())
+    {
+        OneClient *client = this->clientsToConnect.pop();
         client->connectToHost();
-        if (delay > 0)
+
+        // Doing this with the timer to avoid blocking the event loop and allowing other events to be processed first.
+        if (this->delay > 0)
+        {
             QThread::msleep(static_cast<unsigned long>(delay));
+
+            if (i++ > breakAfter)
+            {
+                connectNextBatchTimer.start();
+                break;
+            }
+        }
     }
 }

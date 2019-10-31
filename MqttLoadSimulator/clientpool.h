@@ -3,12 +3,15 @@
 
 #include <QObject>
 #include <oneclient.h>
+#include <QStack>
 
 class ClientPool : public QObject
 {
     Q_OBJECT
 
     QList<OneClient*> clients;
+    QStack<OneClient*> clientsToConnect;
+    QTimer connectNextBatchTimer;
     uint delay;
 public:
     explicit ClientPool(QString hostname, quint16 port, QString username, QString password, bool pub_and_sub, int amount, QString clientIdPart,
