@@ -5,12 +5,13 @@
 #include <QHostInfo>
 
 OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString &password, bool pub_and_sub, int clientNr, QString &clientIdPart,
-                     bool ssl, QObject *parent) :
+                     bool ssl, QString clientPoolRandomId, QObject *parent) :
     QObject(parent),
     client_id(QString("mqtt_load_tester_%1_%2_%3").arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
     clientNr(clientNr),
     pub_and_sub(pub_and_sub),
-    publishTimer(this)
+    publishTimer(this),
+    clientPoolRandomId(clientPoolRandomId)
 {
     if (ssl)
     {
@@ -68,7 +69,7 @@ void OneClient::connected()
 
     if (this->pub_and_sub)
     {
-        QString topic = QString("/loadtester/%1/#").arg(this->clientNr - 1);
+        QString topic = QString("/loadtester/clientpool_%1/%2/#").arg(this->clientPoolRandomId).arg(this->clientNr - 1);
         std::cout << qPrintable(QString("Subscribing to '%1'\n").arg(topic));
         client->subscribe(topic);
         publishTimer.start();
@@ -121,7 +122,7 @@ void OneClient::onPublishTimerTimeout()
     for (int i = 0; i < 25; i++)
     {
         QString payload = QString("Client %1 publish counter: %2").arg(client_id).arg(this->publish_counter++);
-        QMQTT::Message msg(0, QString("/loadtester/%1/hellofromtheloadtester").arg(this->clientNr), payload.toUtf8());
+        QMQTT::Message msg(0, QString("/loadtester/clientpool_%1/%2/hellofromtheloadtester").arg(this->clientPoolRandomId).arg(this->clientNr), payload.toUtf8());
         client->publish(msg);
     }
 }

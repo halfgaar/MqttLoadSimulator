@@ -1,11 +1,13 @@
 #include "clientpool.h"
 #include <QDateTime>
 #include <QThread>
+#include <utils.h>
 
 ClientPool::ClientPool(QString hostname, quint16 port, QString username, QString password, bool pub_and_sub, int amount, QString clientIdPart,
                        uint delay, bool ssl, QObject *parent) : QObject(parent), delay(delay)
 {
     //qsrand(static_cast<uint>(QDateTime::currentMSecsSinceEpoch()));
+    this->clientPoolRandomId = GetRandomString();
 
     connectNextBatchTimer.setSingleShot(true);
     connectNextBatchTimer.setInterval(static_cast<int>(delay));
@@ -13,7 +15,7 @@ ClientPool::ClientPool(QString hostname, quint16 port, QString username, QString
 
     for (int i = 0; i < amount; i++)
     {
-        OneClient *oneClient = new OneClient(hostname, port, username, password, pub_and_sub, i, clientIdPart, ssl, parent);
+        OneClient *oneClient = new OneClient(hostname, port, username, password, pub_and_sub, i, clientIdPart, ssl, this->clientPoolRandomId, parent);
         clients.append(oneClient);
         clientsToConnect.push(oneClient);
     }
