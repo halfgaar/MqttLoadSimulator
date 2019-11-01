@@ -3,6 +3,7 @@
 
 #include <qmqtt.h>
 #include <QTimer>
+#include <QHostInfo>
 
 class OneClient : public QObject
 {
@@ -20,6 +21,9 @@ class OneClient : public QObject
 
     uint receivedCount = 0;
     uint publishCount = 0;
+
+    static bool dnsDone;
+    static QHostInfo targetHostInfo;
 
 private slots:
 

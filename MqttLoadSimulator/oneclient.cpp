@@ -2,7 +2,11 @@
 #include "utils.h"
 #include "iostream"
 #include <QSslConfiguration>
-#include <QHostInfo>
+
+
+// Hack, not thread safe, but we don't need that (for now)
+bool OneClient::dnsDone = false;
+QHostInfo OneClient::targetHostInfo;
 
 OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString &password, bool pub_and_sub, int clientNr, QString &clientIdPart,
                      bool ssl, QString clientPoolRandomId, QObject *parent) :
@@ -22,9 +26,16 @@ OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString
     }
     else
     {
+        QHostAddress targetHost;
+
+        if (!this->dnsDone)
+        {
+            this->targetHostInfo = QHostInfo::fromName(hostname);
+            this->dnsDone = true;
+        }
+
         // Ehm, why the difference in QMTT::Client's overloaded constructors for SSL and non-SSL?
-        QHostInfo info = QHostInfo::fromName(hostname);
-        QHostAddress targetHost = info.addresses().first();
+        targetHost = targetHostInfo.addresses().first();
         this->client = new QMQTT::Client(targetHost, port);
     }
 
