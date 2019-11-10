@@ -28,14 +28,7 @@ ClientPool::~ClientPool()
 
 void ClientPool::startClients()
 {
-    uint breakAfter = 1;
-    uint i = 0;
-
-    if (delay > 0 && delay < 500)
-    {
-        breakAfter = 500 / delay; // 500 is arbritrary...
-    }
-
+    int i = 0;
     while(!this->clientsToConnect.empty())
     {
         OneClient *client = this->clientsToConnect.pop();
@@ -44,10 +37,14 @@ void ClientPool::startClients()
         // Doing this with the timer to avoid blocking the event loop and allowing other events to be processed first.
         if (this->delay > 0)
         {
-            QThread::msleep(static_cast<unsigned long>(delay));
-
-            if (i++ > breakAfter)
+            connectNextBatchTimer.start();
+            break;
+        }
+        else
+        {
+            if (i++ > 100)
             {
+                connectNextBatchTimer.setInterval(0);
                 connectNextBatchTimer.start();
                 break;
             }
