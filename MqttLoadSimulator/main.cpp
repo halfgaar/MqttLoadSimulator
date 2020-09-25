@@ -12,6 +12,7 @@
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
+    qsrand(QDateTime::currentMSecsSinceEpoch());
 
 #ifdef Q_OS_LINUX
     rlim_t rlim = 1000000;
