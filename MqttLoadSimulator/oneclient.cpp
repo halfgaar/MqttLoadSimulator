@@ -57,7 +57,7 @@ OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString
     publishTimer.setSingleShot(false);
     connect(&publishTimer, &QTimer::timeout, this, &OneClient::onPublishTimerTimeout);
 
-    const int totalConnectionDuration = ((totalClients + 1) / (1000 / (delay + 1))) * 1000;
+    const int totalConnectionDuration = ((totalClients + 1) / (1000.0 / (delay + 1))) * 1000;
     const int reconnectInterval = 5000 + (qrand() % totalConnectionDuration);
     reconnectTimer.setInterval(reconnectInterval);
     reconnectTimer.setSingleShot(true);
