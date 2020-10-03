@@ -9,7 +9,7 @@ bool OneClient::dnsDone = false;
 QHostInfo OneClient::targetHostInfo;
 
 OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString &password, bool pub_and_sub, int clientNr, QString &clientIdPart,
-                     bool ssl, QString clientPoolRandomId, QObject *parent) :
+                     bool ssl, QString clientPoolRandomId, const int totalClients, const int delay, QObject *parent) :
     QObject(parent),
     client_id(QString("mqtt_load_tester_%1_%2_%3").arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
     clientNr(clientNr),
@@ -57,7 +57,9 @@ OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString
     publishTimer.setSingleShot(false);
     connect(&publishTimer, &QTimer::timeout, this, &OneClient::onPublishTimerTimeout);
 
-    reconnectTimer.setInterval(interval + 1000);
+    const int totalConnectionDuration = ((totalClients + 1) / (1000 / (delay + 1))) * 1000;
+    const int reconnectInterval = 5000 + (qrand() % totalConnectionDuration);
+    reconnectTimer.setInterval(reconnectInterval);
     reconnectTimer.setSingleShot(true);
     connect(&reconnectTimer, &QTimer::timeout, this, &OneClient::connectToHost);
 }

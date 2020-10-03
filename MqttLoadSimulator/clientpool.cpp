@@ -15,7 +15,7 @@ ClientPool::ClientPool(QString hostname, quint16 port, QString username, QString
 
     for (int i = 0; i < amount; i++)
     {
-        OneClient *oneClient = new OneClient(hostname, port, username, password, pub_and_sub, i, clientIdPart, ssl, this->clientPoolRandomId, parent);
+        OneClient *oneClient = new OneClient(hostname, port, username, password, pub_and_sub, i, clientIdPart, ssl, this->clientPoolRandomId, amount, delay, parent);
         clients.append(oneClient);
         clientsToConnect.push(oneClient);
     }

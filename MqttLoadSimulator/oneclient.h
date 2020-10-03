@@ -34,7 +34,7 @@ private slots:
     void onReceived(const QMQTT::Message& message);
 public:
     OneClient(QString &hostname, quint16 port, QString &username, QString &password, bool pub_and_sub, int clientNr, QString &clientIdPart,
-              bool ssl, QString clientPoolRandomId, QObject *parent = nullptr);
+              bool ssl, QString clientPoolRandomId, const int totalClients, const int delay, QObject *parent = nullptr);
     ~OneClient();
 
 public slots:
