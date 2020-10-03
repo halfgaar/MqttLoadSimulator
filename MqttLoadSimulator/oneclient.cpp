@@ -43,7 +43,7 @@ OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString
     client->setUsername(username);
     client->setPassword(password.toLatin1());
 
-    int keepAlive = (qrand() % 40) + 20;
+    int keepAlive = 60;
     client->setKeepAlive(keepAlive);
 
     connect(client, &QMQTT::Client::connected, this, &OneClient::connected);
