@@ -124,6 +124,8 @@ void OneClient::onClientError(const QMQTT::ClientError error)
         errStr = "Socket resource error. Is your OS limiting you? Ulimit, etc?";
     if (error == QMQTT::SocketSslInternalError)
         errStr = "Socket SSL internal error.";
+    if (error == QMQTT::SocketTimeoutError)
+        errStr = "Socket timeout";
 
     QString msg = QString("Client %1 error code: %2 (%3). Initiated delayed reconnect.\n").arg(this->client_id).arg(error).arg(errStr);
     std::cerr << msg.toLatin1().toStdString().data();
