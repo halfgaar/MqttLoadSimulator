@@ -10,7 +10,7 @@ QHostInfo OneClient::targetHostInfo;
 
 OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString &password, bool pub_and_sub, int clientNr, QString &clientIdPart,
                      bool ssl, QString clientPoolRandomId, const int totalClients, const int delay, QObject *parent) :
-    QObject(parent),
+    QObject(this),
     client_id(QString("mqtt_load_tester_%1_%2_%3").arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
     clientNr(clientNr),
     pub_and_sub(pub_and_sub),
