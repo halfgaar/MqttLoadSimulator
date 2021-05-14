@@ -2,15 +2,19 @@
 #include "utils.h"
 #include "iostream"
 #include <QSslConfiguration>
+#include <QMetaEnum>
 
-
-// Hack, not thread safe, but we don't need that (for now)
-bool OneClient::dnsDone = false;
-QHostInfo OneClient::targetHostInfo;
+/// Converts an enum value to a QString. This will only work is the enum being processed is registered with the Q_ENUM/Q_ENUM_NS macro.
+/// Note that you don't need a function like this if you use qDebug/qInfo etc... they support implicit conversion.
+template<typename QEnum>
+QString enumToString(QEnum value)
+{
+  return QMetaEnum::fromType<QEnum>().valueToKey(value);
+}
 
 OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString &password, bool pub_and_sub, int clientNr, QString &clientIdPart,
                      bool ssl, QString clientPoolRandomId, const int totalClients, const int delay, QObject *parent) :
-    QObject(parent),
+    QObject(this),
     client_id(QString("mqtt_load_tester_%1_%2_%3").arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
     clientNr(clientNr),
     pub_and_sub(pub_and_sub),
@@ -26,17 +30,7 @@ OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString
     }
     else
     {
-        QHostAddress targetHost;
-
-        if (!this->dnsDone)
-        {
-            this->targetHostInfo = QHostInfo::fromName(hostname);
-            this->dnsDone = true;
-        }
-
-        // Ehm, why the difference in QMTT::Client's overloaded constructors for SSL and non-SSL?
-        targetHost = targetHostInfo.addresses().first();
-        this->client = new QMQTT::Client(targetHost, port);
+        this->client = new QMQTT::Client(hostname, port, false, false);
     }
 
     client->setClientId(client_id);
@@ -108,30 +102,11 @@ void OneClient::onDisconnect()
 
 void OneClient::onClientError(const QMQTT::ClientError error)
 {
-    // TODO: arg, doesn't qmqtt have a better way for this?
-    QString errStr = QString("unknown error");
-    if (error == QMQTT::SocketConnectionRefusedError)
-        errStr = "Connection refused";
-    if (error == QMQTT::SocketRemoteHostClosedError)
-        errStr = "Remote host closed";
-    if (error == QMQTT::SocketHostNotFoundError)
-        errStr = "Remote host not found";
-    if (error == QMQTT::MqttBadUserNameOrPasswordError)
-        errStr = "MQTT bad user or password";
-    if (error == QMQTT::MqttNotAuthorizedError)
-        errStr = "MQTT not authorized";
-    if (error == QMQTT::SocketResourceError)
-        errStr = "Socket resource error. Is your OS limiting you? Ulimit, etc?";
-    if (error == QMQTT::SocketSslInternalError)
-        errStr = "Socket SSL internal error.";
-    if (error == QMQTT::SocketTimeoutError)
-        errStr = "Socket timeout";
-
+    QString errStr = enumToString(error);
     QString msg = QString("Client %1 error code: %2 (%3). Initiated delayed reconnect.\n").arg(this->client_id).arg(error).arg(errStr);
     std::cerr << msg.toLatin1().toStdString().data();
 
     this->reconnectTimer.start();
-
 }
 
 void OneClient::onPublishTimerTimeout()

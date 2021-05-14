@@ -15,15 +15,10 @@ ClientPool::ClientPool(QString hostname, quint16 port, QString username, QString
 
     for (int i = 0; i < amount; i++)
     {
-        OneClient *oneClient = new OneClient(hostname, port, username, password, pub_and_sub, i, clientIdPart, ssl, this->clientPoolRandomId, amount, delay, parent);
+        OneClient *oneClient = new OneClient(hostname, port, username, password, pub_and_sub, i, clientIdPart, ssl, this->clientPoolRandomId, amount, delay, this);
         clients.append(oneClient);
         clientsToConnect.push(oneClient);
     }
-}
-
-ClientPool::~ClientPool()
-{
-    qDeleteAll(clients);
 }
 
 void ClientPool::startClients()
