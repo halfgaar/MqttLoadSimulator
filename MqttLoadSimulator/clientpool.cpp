@@ -6,7 +6,6 @@
 ClientPool::ClientPool(QString hostname, quint16 port, QString username, QString password, bool pub_and_sub, int amount, QString clientIdPart,
                        uint delay, bool ssl, QObject *parent) : QObject(parent), delay(delay)
 {
-    //qsrand(static_cast<uint>(QDateTime::currentMSecsSinceEpoch()));
     this->clientPoolRandomId = GetRandomString();
 
     connectNextBatchTimer.setSingleShot(true);

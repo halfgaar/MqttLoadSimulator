@@ -4,5 +4,6 @@
 #include <QString>
 
 QString GetRandomString();
+void seedQtrand();
 
 #endif // UTILS_H

@@ -9,10 +9,12 @@
 #include <sys/resource.h>
 #endif
 
+#include "utils.h"
+
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-    qsrand(QDateTime::currentMSecsSinceEpoch());
+    seedQtrand();
 
 #ifdef Q_OS_LINUX
     rlim_t rlim = 1000000;
@@ -121,8 +123,6 @@ int main(int argc, char *argv[])
         }
 
     }
-
-    qsrand(static_cast<uint>(QDateTime::currentMSecsSinceEpoch()));
 
     QString hostname = parser.value(hostnameOption);
 

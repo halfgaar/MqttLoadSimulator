@@ -26,3 +26,29 @@ QString GetRandomString()
    }
    return randomString;
 }
+
+void seedQtrand()
+{
+    const size_t s = sizeof (uint);
+    std::vector<unsigned char> buf(s);
+    ssize_t actual_len = getrandom(buf.data(), s, 0);
+
+    if (actual_len < 0 || actual_len != s)
+    {
+        throw std::runtime_error("Error requesting random data");
+    }
+
+    uint result = 0;
+    uint shift = 0;
+
+    for (unsigned char c : buf)
+    {
+        if (shift > 32)
+            break;
+
+        result |= c << shift;
+        shift += 8;
+    }
+
+    qsrand(result);
+}
