@@ -9,13 +9,14 @@ bool OneClient::dnsDone = false;
 QHostInfo OneClient::targetHostInfo;
 
 OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString &password, bool pub_and_sub, int clientNr, QString &clientIdPart,
-                     bool ssl, QString clientPoolRandomId, const int totalClients, const int delay, QObject *parent) :
+                     bool ssl, QString clientPoolRandomId, const int totalClients, const int delay, int burst_interval, int burst_size, QObject *parent) :
     QObject(parent),
     client_id(QString("mqtt_load_tester_%1_%2_%3").arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
     clientNr(clientNr),
     pub_and_sub(pub_and_sub),
     publishTimer(this),
-    clientPoolRandomId(clientPoolRandomId)
+    clientPoolRandomId(clientPoolRandomId),
+    burstSize(burst_size)
 {
     if (ssl)
     {
@@ -51,7 +52,7 @@ OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString
     connect(client, &QMQTT::Client::error, this, &OneClient::onClientError);
     connect(client, &QMQTT::Client::received, this, &OneClient::onReceived);
 
-    int interval = (qrand() % 3000) + 1000;
+    int interval = (qrand() % burst_interval) + 1000;
 
     publishTimer.setInterval(interval);
     publishTimer.setSingleShot(false);
@@ -138,7 +139,7 @@ void OneClient::onPublishTimerTimeout()
 {
     //QTimer *sender = static_cast<QTimer*>(this->sender());
 
-    for (int i = 0; i < 25; i++)
+    for (int i = 0; i < burstSize; i++)
     {
         QString payload = QString("Client %1 publish counter: %2").arg(client_id).arg(this->publish_counter++);
         QMQTT::Message msg(0, QString("/loadtester/clientpool_%1/%2/hellofromtheloadtester").arg(this->clientPoolRandomId).arg(this->clientNr), payload.toUtf8());

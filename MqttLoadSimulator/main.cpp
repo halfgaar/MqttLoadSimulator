@@ -30,7 +30,13 @@ int main(int argc, char *argv[])
     parser.setApplicationDescription("MQTT load simulator. The active clients subscribe to the topics of every previous active clients.\nThe passive "
                                      "clients connect and subscribe to a random path that likely doesn't exist."
                                      "\n\n"
-                                     "The active clients publish 25 topics, every 1-4 seconds (randomly picked per client).");
+                                     "The active clients publish <msg-per-burst> topics, every <burst-interval> mseconds (with randomization added)."
+                                     "\n\n"
+                                     "It's useful to note that clients with high publish volume are heavier for servers, because it entails more\n"
+                                     "topic parsing, subscriber lookup, etc."
+                                     "\n\n"
+                                     "Also, primarily because Qt has one event loop on the main thread, this app is single threaded and not highly\n"
+                                     "efficient. But, probalby not less than other stress testers I've seen.");
     parser.addHelpOption();
 
     QCommandLineOption hostnameOption("hostname", "Hostname of target. Required.", "hostname");
@@ -51,11 +57,17 @@ int main(int argc, char *argv[])
     QCommandLineOption usernameOption("username", "Username. DEFAULT: user", "username", "user");
     parser.addOption(usernameOption);
 
-    QCommandLineOption passwordOption("password", "Password. DEFAULT: password", "username", "user");
+    QCommandLineOption passwordOption("password", "Password. DEFAULT: password", "password", "user");
     parser.addOption(passwordOption);
 
     QCommandLineOption clientStartupDelayOption("delay", "Wait <ms> milliseconds between each connecting client", "ms", "0");
     parser.addOption(clientStartupDelayOption);
+
+    QCommandLineOption clientBurstIntervaltOption("burst-interval", "Publish <msg-per-burst> messages per <burst interval> (+/- random spread). DEFAULT: 3000", "ms", "3000");
+    parser.addOption(clientBurstIntervaltOption);
+
+    QCommandLineOption clientMessageCountPerBurstOption("msg-per-burst", "Publish x messages per <burst interval>. Default: 25", "amount", "25");
+    parser.addOption(clientMessageCountPerBurstOption);
 
     parser.process(a);
 
@@ -124,12 +136,26 @@ int main(int argc, char *argv[])
 
     }
 
+    int burstInterval = parser.value(clientBurstIntervaltOption).toInt(&parsed);
+    if (!parsed)
+    {
+        fputs(qPrintable("--burst-interval is not a number\n"), stderr);
+        return 1;
+    }
+
+    int burstSize = parser.value(clientMessageCountPerBurstOption).toInt(&parsed);
+    if (!parsed)
+    {
+        fputs(qPrintable("--msg-per-burst is not a number\n"), stderr);
+        return 1;
+    }
+
     QString hostname = parser.value(hostnameOption);
 
-    ClientPool poolActive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), true, amountActive, "active", delay, ssl, &a);
+    ClientPool poolActive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), true, amountActive, "active", delay, ssl, burstInterval, burstSize, &a);
     poolActive.startClients();
 
-    ClientPool poolPassive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), false, amountPassive, "passive", delay, ssl, &a);
+    ClientPool poolPassive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), false, amountPassive, "passive", delay, ssl, burstInterval, burstSize, &a);
     poolPassive.startClients();
 
     return a.exec();
