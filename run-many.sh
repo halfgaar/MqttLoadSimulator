@@ -41,7 +41,7 @@ while [ -n "$*" ]; do
       burst_interval=$value
       shift
     ;;
-    "--msg_per_burst")
+    "--msg-per-burst")
       msg_per_burst=$value
       shift
     ;;
@@ -89,13 +89,9 @@ declare -a pids
 
 trap kill_all_children SIGINT SIGTERM
 
-total_clients=$(( processes * amount_active + processes * amount_passive ))
-total_msg_burst=$(( msg_per_burst * total_clients ))
-
 echo "Starting $processes load simulators, each with $amount_active active clients and $amount_passive passive clients, with $delay ms wait time between each connection."
 echo "Total active clients: $(( processes * amount_active )). Total Passive clients: $(( processes * amount_passive ))."
 echo "Each client bursting $msg_per_burst messages per $burst_interval ms (+/- random spread)."
-echo "This is about about $(( (total_msg_burst * 650) / burst_interval )) / s. But, there's randomness to it, so it may very."
 
 for instancenr in $(seq 1 "$processes"); do
   one_load_simulator & pids+=($!)
