@@ -153,10 +153,12 @@ int main(int argc, char *argv[])
     QString hostname = parser.value(hostnameOption);
 
     ClientPool poolActive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), true, amountActive, "active", delay, ssl, burstInterval, burstSize, &a);
-    poolActive.startClients();
+    // Create some randomness in starting, in case you're starting more. It helps distribute server load.
+    QTimer::singleShot((qrand() % 10000), &poolActive, &ClientPool::startClients);
 
     ClientPool poolPassive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), false, amountPassive, "passive", delay, ssl, burstInterval, burstSize, &a);
-    poolPassive.startClients();
+    // Create some randomness in starting, in case you're starting more. It helps distribute server load.
+    QTimer::singleShot((qrand() % 10000), &poolPassive, &ClientPool::startClients);
 
     return a.exec();
 }

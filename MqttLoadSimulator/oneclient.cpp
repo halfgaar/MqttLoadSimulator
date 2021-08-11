@@ -16,7 +16,8 @@ OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString
     pub_and_sub(pub_and_sub),
     publishTimer(this),
     clientPoolRandomId(clientPoolRandomId),
-    burstSize(burst_size)
+    burstSize(burst_size),
+    topicString(QString("/loadtester/clientpool_%1/%2/hellofromtheloadtester").arg(this->clientPoolRandomId).arg(this->clientNr))
 {
     if (ssl)
     {
@@ -52,7 +53,7 @@ OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString
     connect(client, &QMQTT::Client::error, this, &OneClient::onClientError);
     connect(client, &QMQTT::Client::received, this, &OneClient::onReceived);
 
-    int interval = (qrand() % burst_interval) + 1000;
+    int interval = (qrand() % burst_interval) + 100;
 
     publishTimer.setInterval(interval);
     publishTimer.setSingleShot(false);
@@ -142,7 +143,7 @@ void OneClient::onPublishTimerTimeout()
     for (int i = 0; i < burstSize; i++)
     {
         QString payload = QString("Client %1 publish counter: %2").arg(client_id).arg(this->publish_counter++);
-        QMQTT::Message msg(0, QString("/loadtester/clientpool_%1/%2/hellofromtheloadtester").arg(this->clientPoolRandomId).arg(this->clientNr), payload.toUtf8());
+        QMQTT::Message msg(0, topicString, payload.toUtf8());
         client->publish(msg);
         this->publishCount++;
     }

@@ -20,6 +20,7 @@ class OneClient : public QObject
     QString clientPoolRandomId;
 
     const int burstSize;
+    QString topicString;
 
     uint receivedCount = 0;
     uint publishCount = 0;
