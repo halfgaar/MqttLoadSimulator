@@ -53,7 +53,7 @@ OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString
     connect(client, &QMQTT::Client::error, this, &OneClient::onClientError);
     connect(client, &QMQTT::Client::received, this, &OneClient::onReceived);
 
-    int interval = (qrand() % burst_interval) + 100;
+    int interval = (qrand() % burst_interval) + 1000;
 
     publishTimer.setInterval(interval);
     publishTimer.setSingleShot(false);
