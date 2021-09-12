@@ -74,7 +74,7 @@ OneClient::~OneClient()
 
 void OneClient::connectToHost()
 {
-    if (!client->isConnectedToHost())
+    if (!_connected) // client->isConnectedToHost() checks the wrong thing (whether socket is connected), and is true when SSL is still being negotiated.
     {
         std::cout << "Connecting...\n";
         client->connectToHost();
@@ -83,6 +83,8 @@ void OneClient::connectToHost()
 
 void OneClient::connected()
 {
+    _connected = true;
+
     //QMQTT::Client *sender = static_cast<QMQTT::Client *>(this->sender());
     std::cout << "Connected.\n";
 
@@ -104,6 +106,8 @@ void OneClient::connected()
 
 void OneClient::onDisconnect()
 {
+    _connected = false;
+
     QString msg = QString("Client %1 disconnected\n").arg(this->client_id);
     std::cout << msg.toLatin1().toStdString().data();
 }
@@ -138,6 +142,10 @@ void OneClient::onClientError(const QMQTT::ClientError error)
 
 void OneClient::onPublishTimerTimeout()
 {
+    // https://github.com/emqx/qmqtt/issues/230
+    if (!_connected)
+        return;
+
     //QTimer *sender = static_cast<QTimer*>(this->sender());
 
     for (int i = 0; i < burstSize; i++)

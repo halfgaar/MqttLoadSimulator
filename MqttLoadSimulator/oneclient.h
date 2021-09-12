@@ -28,6 +28,8 @@ class OneClient : public QObject
     static bool dnsDone;
     static QHostInfo targetHostInfo;
 
+    bool _connected = false;
+
 private slots:
 
     void connected();
