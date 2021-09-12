@@ -8,9 +8,12 @@ ClientPool::ClientPool(QString hostname, quint16 port, QString username, QString
 {
     this->clientPoolRandomId = GetRandomString();
 
-    connectNextBatchTimer.setSingleShot(true);
+    connectNextBatchTimer.setSingleShot(delay == 0);
     connectNextBatchTimer.setInterval(static_cast<int>(delay));
     connect(&connectNextBatchTimer, &QTimer::timeout, this, &ClientPool::startClients);
+
+    if (delay > 0)
+        connectNextBatchTimer.start();
 
     for (int i = 0; i < amount; i++)
     {
@@ -37,7 +40,6 @@ void ClientPool::startClients()
         // Doing this with the timer to avoid blocking the event loop and allowing other events to be processed first.
         if (this->delay > 0)
         {
-            connectNextBatchTimer.start();
             break;
         }
         else
@@ -49,5 +51,10 @@ void ClientPool::startClients()
                 break;
             }
         }
+    }
+
+    if (clientsToConnect.empty())
+    {
+        connectNextBatchTimer.stop();
     }
 }
