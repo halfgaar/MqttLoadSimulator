@@ -74,6 +74,9 @@ int main(int argc, char *argv[])
     QCommandLineOption overrideReconnectIntervalOption("reconnect-interval", "Time between reconnect on error. Default: dynamic.", "ms", "-1");
     parser.addOption(overrideReconnectIntervalOption);
 
+    QCommandLineOption passiveSubscribeTopic("subscribe-topic", "Topic for passive clients to subscribe to. Default: random per client", "topic");
+    parser.addOption(passiveSubscribeTopic);
+
     parser.process(a);
 
     try
@@ -98,14 +101,15 @@ int main(int argc, char *argv[])
         }
 
         QString hostname = parser.value(hostnameOption);
+        QString subscribeTopic = parser.value(passiveSubscribeTopic);
 
         ClientPool poolActive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), true, amountActive, "active", delay, ssl,
-                              burstInterval, burstSize, overrideReconnectInterval, &a);
+                              burstInterval, burstSize, overrideReconnectInterval, subscribeTopic, &a);
         // Create some randomness in starting, in case you're starting more. It helps distribute server load.
         QTimer::singleShot((qrand() % 10000), &poolActive, &ClientPool::startClients);
 
         ClientPool poolPassive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), false, amountPassive, "passive", delay, ssl,
-                               burstInterval, burstSize, overrideReconnectInterval, &a);
+                               burstInterval, burstSize, overrideReconnectInterval, subscribeTopic, &a);
         // Create some randomness in starting, in case you're starting more. It helps distribute server load.
         QTimer::singleShot((qrand() % 10000), &poolPassive, &ClientPool::startClients);
 

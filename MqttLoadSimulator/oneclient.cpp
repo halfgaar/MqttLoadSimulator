@@ -10,7 +10,7 @@ QHostInfo OneClient::targetHostInfo;
 
 OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString &password, bool pub_and_sub, int clientNr, QString &clientIdPart,
                      bool ssl, QString clientPoolRandomId, const int totalClients, const int delay, int burst_interval, int burst_size, int overrideReconnectInterval,
-                     QObject *parent) :
+                     const QString &subscribeTopic, QObject *parent) :
     QObject(parent),
     client_id(QString("mqtt_load_tester_%1_%2_%3").arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
     clientNr(clientNr),
@@ -18,7 +18,8 @@ OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString
     publishTimer(this),
     clientPoolRandomId(clientPoolRandomId),
     burstSize(burst_size),
-    topicString(QString("/loadtester/clientpool_%1/%2/hellofromtheloadtester").arg(this->clientPoolRandomId).arg(this->clientNr))
+    topicString(QString("/loadtester/clientpool_%1/%2/hellofromtheloadtester").arg(this->clientPoolRandomId).arg(this->clientNr)),
+    subscribeTopic(subscribeTopic)
 {
     if (ssl)
     {
@@ -112,8 +113,13 @@ void OneClient::connected()
     }
     else
     {
-        QString ran = GetRandomString();
-        QString topic = QString("/silentpath/%1/#").arg(ran);
+        QString topic = this->subscribeTopic;
+
+        if (topic.isEmpty())
+        {
+            QString ran = GetRandomString();
+            topic = QString("/silentpath/%1/#").arg(ran);
+        }
         std::cout << qPrintable(QString("Subscribing to '%1'\n").arg(topic));
         client->subscribe(topic);
     }

@@ -16,7 +16,7 @@ class ClientPool : public QObject
     QString clientPoolRandomId;
 public:
     explicit ClientPool(QString hostname, quint16 port, QString username, QString password, bool pub_and_sub, int amount, QString clientIdPart,
-                        uint delay, bool ssl, int burst_interval, int burst_size, int overrideReconnectInterval,
+                        uint delay, bool ssl, int burst_interval, int burst_size, int overrideReconnectInterval, const QString &subscribeTopic,
                         QObject *parent = nullptr);
     ~ClientPool();
 
