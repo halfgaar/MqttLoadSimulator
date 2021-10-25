@@ -54,10 +54,12 @@ int main(int argc, char *argv[])
     QCommandLineOption amountPassiveOption("amount-passive", "Amount of passive clients with one silent subscription. Required.", "amount");
     parser.addOption(amountPassiveOption);
 
-    QCommandLineOption usernameOption("username", "Username. DEFAULT: user", "username", "user");
+    QCommandLineOption usernameOption("username", "Username. DEFAULT: user. Any occurance of %1 will be replaced by a random string, also on each reconnect. "
+                                                  "Useful for stress-testing the auth mechanism of a server.", "username", "user");
     parser.addOption(usernameOption);
 
-    QCommandLineOption passwordOption("password", "Password. DEFAULT: password", "password", "user");
+    QCommandLineOption passwordOption("password", "Password. DEFAULT: password. Any occurance of %1 will be replaced by a random string, also on each reconnect. "
+                                                  "Useful for stress-testing the auth mechanism of a server.", "password", "user");
     parser.addOption(passwordOption);
 
     QCommandLineOption clientStartupDelayOption("delay", "Wait <ms> milliseconds between each connecting client", "ms", "0");
@@ -68,6 +70,9 @@ int main(int argc, char *argv[])
 
     QCommandLineOption clientMessageCountPerBurstOption("msg-per-burst", "Publish x messages per <burst interval>. Default: 25", "amount", "25");
     parser.addOption(clientMessageCountPerBurstOption);
+
+    QCommandLineOption overrideReconnectIntervalOption("reconnect-interval", "Time between reconnect on error. Default: dynamic.", "ms", "-1");
+    parser.addOption(overrideReconnectIntervalOption);
 
     parser.process(a);
 
@@ -150,13 +155,22 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    int overrideReconnectInterval = parser.value(overrideReconnectIntervalOption).toInt(&parsed);
+    if (!parsed)
+    {
+        fputs(qPrintable("reconnect-interval is not a number\n"), stderr);
+        return 1;
+    }
+
     QString hostname = parser.value(hostnameOption);
 
-    ClientPool poolActive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), true, amountActive, "active", delay, ssl, burstInterval, burstSize, &a);
+    ClientPool poolActive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), true, amountActive, "active", delay, ssl,
+                          burstInterval, burstSize, overrideReconnectInterval, &a);
     // Create some randomness in starting, in case you're starting more. It helps distribute server load.
     QTimer::singleShot((qrand() % 10000), &poolActive, &ClientPool::startClients);
 
-    ClientPool poolPassive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), false, amountPassive, "passive", delay, ssl, burstInterval, burstSize, &a);
+    ClientPool poolPassive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), false, amountPassive, "passive", delay, ssl,
+                           burstInterval, burstSize, overrideReconnectInterval, &a);
     // Create some randomness in starting, in case you're starting more. It helps distribute server load.
     QTimer::singleShot((qrand() % 10000), &poolPassive, &ClientPool::startClients);
 

@@ -9,7 +9,8 @@ bool OneClient::dnsDone = false;
 QHostInfo OneClient::targetHostInfo;
 
 OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString &password, bool pub_and_sub, int clientNr, QString &clientIdPart,
-                     bool ssl, QString clientPoolRandomId, const int totalClients, const int delay, int burst_interval, int burst_size, QObject *parent) :
+                     bool ssl, QString clientPoolRandomId, const int totalClients, const int delay, int burst_interval, int burst_size, int overrideReconnectInterval,
+                     QObject *parent) :
     QObject(parent),
     client_id(QString("mqtt_load_tester_%1_%2_%3").arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
     clientNr(clientNr),
@@ -41,6 +42,20 @@ OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString
         this->client = new QMQTT::Client(targetHost, port);
     }
 
+    if (username.contains("%1"))
+    {
+        this->usernameBase = username;
+        regenRandomUsername = true;
+        username = QString(this->usernameBase).arg(GetRandomString());
+    }
+
+    if (password.contains("%1"))
+    {
+        this->passwordBase = password;
+        regenRandomPassword = true;
+        password = QString(this->passwordBase).arg(GetRandomString());
+    }
+
     client->setClientId(client_id);
     client->setUsername(username);
     client->setPassword(password.toLatin1());
@@ -60,7 +75,7 @@ OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString
     connect(&publishTimer, &QTimer::timeout, this, &OneClient::onPublishTimerTimeout);
 
     const int totalConnectionDuration = ((totalClients + 1) / (1000.0 / (delay + 1))) * 1000;
-    const int reconnectInterval = 5000 + (qrand() % totalConnectionDuration);
+    const int reconnectInterval = overrideReconnectInterval >= 0 ? overrideReconnectInterval : 5000 + (qrand() % totalConnectionDuration);
     reconnectTimer.setInterval(reconnectInterval);
     reconnectTimer.setSingleShot(true);
     connect(&reconnectTimer, &QTimer::timeout, this, &OneClient::connectToHost);
@@ -135,6 +150,18 @@ void OneClient::onClientError(const QMQTT::ClientError error)
 
     QString msg = QString("Client %1 error code: %2 (%3). Initiated delayed reconnect.\n").arg(this->client_id).arg(error).arg(errStr);
     std::cerr << msg.toLatin1().toStdString().data();
+
+    if (regenRandomUsername)
+    {
+        const QString newUsername = QString(this->usernameBase).arg(GetRandomString());
+        client->setUsername(newUsername);
+    }
+
+    if (regenRandomPassword)
+    {
+        const QString newPassword = QString(this->passwordBase).arg(GetRandomString());
+        client->setPassword(newPassword.toLatin1());
+    }
 
     this->reconnectTimer.start();
 
