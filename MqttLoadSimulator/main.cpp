@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
                                      "efficient. But, probalby not less than other stress testers I've seen.");
     parser.addHelpOption();
 
-    QCommandLineOption hostnameOption("hostname", "Hostname of target. Required.", "hostname");
+    QCommandLineOption hostnameOption("hostname", "Hostname of target. Default: localhost.", "hostname", "localhost");
     parser.addOption(hostnameOption);
 
     QCommandLineOption portOption("port", "Target port. Default: 1883|8883", "port", "1883");
@@ -48,10 +48,10 @@ int main(int argc, char *argv[])
     QCommandLineOption sslOption("ssl", "Enable SSL. Always insecure mode.");
     parser.addOption(sslOption);
 
-    QCommandLineOption amountActiveOption("amount-active", "Amount of active clients. Required.", "amount");
+    QCommandLineOption amountActiveOption("amount-active", "Amount of active clients. Default: 1.", "amount", "1");
     parser.addOption(amountActiveOption);
 
-    QCommandLineOption amountPassiveOption("amount-passive", "Amount of passive clients with one silent subscription. Required.", "amount");
+    QCommandLineOption amountPassiveOption("amount-passive", "Amount of passive clients with one silent subscription. Default: 1.", "amount", "1");
     parser.addOption(amountPassiveOption);
 
     QCommandLineOption usernameOption("username", "Username. DEFAULT: user. Any occurance of %1 will be replaced by a random string, also on each reconnect. "
@@ -76,103 +76,44 @@ int main(int argc, char *argv[])
 
     parser.process(a);
 
-    if (!parser.isSet(hostnameOption))
+    try
     {
-        fputs(qPrintable("Hostname is required\n"), stderr);
-        return 1;
-    }
+        quint16 port = parseIntOption<quint16>(parser, portOption);
+        const int amountActive = parseIntOption<int>(parser, amountActiveOption);
+        const int amountPassive = parseIntOption<int>(parser, amountPassiveOption);
+        const int burstInterval = parseIntOption<int>(parser, clientBurstIntervaltOption);
+        const int burstSize = parseIntOption<int>(parser, clientMessageCountPerBurstOption);
+        const int overrideReconnectInterval = parseIntOption<int>(parser, overrideReconnectIntervalOption);
+        const uint delay = parseIntOption<uint>(parser, clientStartupDelayOption);
 
-    if (!parser.isSet(amountActiveOption))
-    {
-        fputs(qPrintable("Amount of active clients is required\n"), stderr);
-        return 1;
-    }
+        if (burstInterval <= 0)
+            throw ArgumentException("Burst interval must be > 0");
 
-    if (!parser.isSet(amountPassiveOption))
-    {
-        fputs(qPrintable("Amount of passive clients is required\n"), stderr);
-        return 1;
-    }
-
-    bool parsed = false;
-    quint16 port = static_cast<quint16>(parser.value(portOption).toInt(&parsed));
-    if (!parsed)
-    {
-        fputs(qPrintable("Port is not a number\n"), stderr);
-        return 1;
-    }
-
-    bool ssl = false;
-
-    if (parser.isSet(sslOption))
-    {
-        ssl = true;
-
-        if (!parser.isSet(portOption))
+        bool ssl = false;
+        if (parser.isSet(sslOption))
         {
-            port = 8883;
-        }
-    }
-
-    int amountActive = parser.value(amountActiveOption).toInt(&parsed);
-    if (!parsed)
-    {
-        fputs(qPrintable("amount-active is not a number\n"), stderr);
-        return 1;
-    }
-
-    int amountPassive = parser.value(amountPassiveOption).toInt(&parsed);
-    if (!parsed)
-    {
-        fputs(qPrintable("amount-active is not a number\n"), stderr);
-        return 1;
-    }
-
-    uint delay = 0;
-
-    if (parser.isSet(clientStartupDelayOption))
-    {
-        delay = parser.value(clientStartupDelayOption).toUInt(&parsed);
-        if (!parsed)
-        {
-            fputs(qPrintable("delay is not a positive number\n"), stderr);
-            return 1;
+            ssl = true;
+            if (!parser.isSet(portOption))
+                port = 8883;
         }
 
-    }
+        QString hostname = parser.value(hostnameOption);
 
-    int burstInterval = parser.value(clientBurstIntervaltOption).toInt(&parsed);
-    if (!parsed)
+        ClientPool poolActive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), true, amountActive, "active", delay, ssl,
+                              burstInterval, burstSize, overrideReconnectInterval, &a);
+        // Create some randomness in starting, in case you're starting more. It helps distribute server load.
+        QTimer::singleShot((qrand() % 10000), &poolActive, &ClientPool::startClients);
+
+        ClientPool poolPassive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), false, amountPassive, "passive", delay, ssl,
+                               burstInterval, burstSize, overrideReconnectInterval, &a);
+        // Create some randomness in starting, in case you're starting more. It helps distribute server load.
+        QTimer::singleShot((qrand() % 10000), &poolPassive, &ClientPool::startClients);
+
+        return a.exec();
+    }
+    catch (std::exception &ex)
     {
-        fputs(qPrintable("--burst-interval is not a number\n"), stderr);
+        fprintf(stderr, "%s\n", ex.what());
         return 1;
     }
-
-    int burstSize = parser.value(clientMessageCountPerBurstOption).toInt(&parsed);
-    if (!parsed)
-    {
-        fputs(qPrintable("--msg-per-burst is not a number\n"), stderr);
-        return 1;
-    }
-
-    int overrideReconnectInterval = parser.value(overrideReconnectIntervalOption).toInt(&parsed);
-    if (!parsed)
-    {
-        fputs(qPrintable("reconnect-interval is not a number\n"), stderr);
-        return 1;
-    }
-
-    QString hostname = parser.value(hostnameOption);
-
-    ClientPool poolActive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), true, amountActive, "active", delay, ssl,
-                          burstInterval, burstSize, overrideReconnectInterval, &a);
-    // Create some randomness in starting, in case you're starting more. It helps distribute server load.
-    QTimer::singleShot((qrand() % 10000), &poolActive, &ClientPool::startClients);
-
-    ClientPool poolPassive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), false, amountPassive, "passive", delay, ssl,
-                           burstInterval, burstSize, overrideReconnectInterval, &a);
-    // Create some randomness in starting, in case you're starting more. It helps distribute server load.
-    QTimer::singleShot((qrand() % 10000), &poolPassive, &ClientPool::startClients);
-
-    return a.exec();
 }
