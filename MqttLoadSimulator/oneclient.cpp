@@ -3,6 +3,7 @@
 #include "iostream"
 #include <QSslConfiguration>
 
+#include "globals.h"
 
 // Hack, not thread safe, but we don't need that (for now)
 bool OneClient::dnsDone = false;
@@ -88,11 +89,17 @@ OneClient::~OneClient()
     delete client;
 }
 
+Counters OneClient::getCounters() const
+{
+    return counters;
+}
+
 void OneClient::connectToHost()
 {
     if (!_connected) // client->isConnectedToHost() checks the wrong thing (whether socket is connected), and is true when SSL is still being negotiated.
     {
-        std::cout << "Connecting...\n";
+        if (Globals::verbose)
+            std::cout << "Connecting...\n";
         client->connectToHost();
     }
 }
@@ -100,14 +107,16 @@ void OneClient::connectToHost()
 void OneClient::connected()
 {
     _connected = true;
+    counters.connect++;
 
-    //QMQTT::Client *sender = static_cast<QMQTT::Client *>(this->sender());
-    std::cout << "Connected.\n";
+    if (Globals::verbose)
+        std::cout << "Connected.\n";
 
     if (this->pub_and_sub)
     {
         QString topic = QString("/loadtester/clientpool_%1/%2/#").arg(this->clientPoolRandomId).arg(this->clientNr - 1);
-        std::cout << qPrintable(QString("Subscribing to '%1'\n").arg(topic));
+        if (Globals::verbose)
+            std::cout << qPrintable(QString("Subscribing to '%1'\n").arg(topic));
         client->subscribe(topic);
         publishTimer.start();
     }
@@ -120,7 +129,9 @@ void OneClient::connected()
             QString ran = GetRandomString();
             topic = QString("/silentpath/%1/#").arg(ran);
         }
-        std::cout << qPrintable(QString("Subscribing to '%1'\n").arg(topic));
+
+        if (Globals::verbose)
+            std::cout << qPrintable(QString("Subscribing to '%1'\n").arg(topic));
         client->subscribe(topic);
     }
 }
@@ -128,13 +139,19 @@ void OneClient::connected()
 void OneClient::onDisconnect()
 {
     _connected = false;
+    counters.disconnect++;
 
-    QString msg = QString("Client %1 disconnected\n").arg(this->client_id);
-    std::cout << msg.toLatin1().toStdString().data();
+    if (Globals::verbose)
+    {
+        QString msg = QString("Client %1 disconnected\n").arg(this->client_id);
+        std::cout << msg.toLatin1().toStdString().data();
+    }
 }
 
 void OneClient::onClientError(const QMQTT::ClientError error)
 {
+    counters.error++;
+
     // TODO: arg, doesn't qmqtt have a better way for this?
     QString errStr = QString("unknown error");
     if (error == QMQTT::SocketConnectionRefusedError)
@@ -154,8 +171,11 @@ void OneClient::onClientError(const QMQTT::ClientError error)
     if (error == QMQTT::SocketTimeoutError)
         errStr = "Socket timeout";
 
-    QString msg = QString("Client %1 error code: %2 (%3). Initiated delayed reconnect.\n").arg(this->client_id).arg(error).arg(errStr);
-    std::cerr << msg.toLatin1().toStdString().data();
+    if (Globals::verbose)
+    {
+        QString msg = QString("Client %1 error code: %2 (%3). Initiated delayed reconnect.\n").arg(this->client_id).arg(error).arg(errStr);
+        std::cerr << msg.toLatin1().toStdString().data();
+    }
 
     if (regenRandomUsername)
     {
@@ -179,20 +199,17 @@ void OneClient::onPublishTimerTimeout()
     if (!_connected)
         return;
 
-    //QTimer *sender = static_cast<QTimer*>(this->sender());
-
     for (int i = 0; i < burstSize; i++)
     {
-        QString payload = QString("Client %1 publish counter: %2").arg(client_id).arg(this->publish_counter++);
+        QString payload = QString("Client %1 publish counter: %2").arg(client_id).arg(counters.publish);
         QMQTT::Message msg(0, topicString, payload.toUtf8());
         client->publish(msg);
-        this->publishCount++;
+        counters.publish++;
     }
 }
 
 void OneClient::onReceived(const QMQTT::Message &message)
 {
     Q_UNUSED(message)
-    this->receivedCount++;
-    //std::cout << qPrintable(message.payload()) << std::endl;
+    counters.received++;
 }

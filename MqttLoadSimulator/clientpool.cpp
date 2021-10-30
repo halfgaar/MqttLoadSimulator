@@ -30,6 +30,23 @@ ClientPool::~ClientPool()
     qDeleteAll(clients);
 }
 
+Counters ClientPool::getTotalCounters() const
+{
+    Counters total;
+
+    for(const OneClient *c : clients)
+    {
+        total += c->getCounters();
+    }
+
+    return total;
+}
+
+int ClientPool::getClientCount() const
+{
+    return clients.size();
+}
+
 void ClientPool::startClients()
 {
     int i = 0;

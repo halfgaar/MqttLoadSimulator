@@ -5,12 +5,13 @@
 #include <QTimer>
 #include <QHostInfo>
 
+#include "counters.h"
+
 class OneClient : public QObject
 {
     Q_OBJECT
 
     QString client_id;
-    int publish_counter = 0;
     int clientNr = 0;
     bool pub_and_sub = false;
     QTimer publishTimer;
@@ -22,8 +23,7 @@ class OneClient : public QObject
     const int burstSize;
     QString topicString;
 
-    uint receivedCount = 0;
-    uint publishCount = 0;
+    Counters counters;
 
     static bool dnsDone;
     static QHostInfo targetHostInfo;
@@ -49,6 +49,8 @@ public:
               bool ssl, QString clientPoolRandomId, const int totalClients, const int delay, int burst_interval, int burst_size, int overrideReconnectInterval,
               const QString &subscribeTopic, QObject *parent = nullptr);
     ~OneClient();
+
+    Counters getCounters() const;
 
 public slots:
     void connectToHost();

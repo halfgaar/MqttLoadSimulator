@@ -11,20 +11,15 @@
 
 #include "utils.h"
 
+#include "loadsimulator.h"
+#include "globals.h"
+
 int main(int argc, char *argv[])
 {
-    QCoreApplication a(argc, argv);
+    LoadSimulator a(argc, argv);
     seedQtrand();
 
-#ifdef Q_OS_LINUX
-    rlim_t rlim = 1000000;
-    printf("Setting ulimit nofile to %ld.\n", rlim);
-    struct rlimit v = { rlim, rlim };
-    if (setrlimit(RLIMIT_NOFILE, &v) != 0)
-    {
-        fputs(qPrintable("WARNING: Changing ulimit failed.\n"), stderr);
-    }
-#endif
+
 
     QCommandLineParser parser;
     parser.setApplicationDescription("MQTT load simulator. The active clients subscribe to the topics of every previous active clients.\nThe passive "
@@ -77,6 +72,9 @@ int main(int argc, char *argv[])
     QCommandLineOption passiveSubscribeTopic("subscribe-topic", "Topic for passive clients to subscribe to. Default: random per client", "topic");
     parser.addOption(passiveSubscribeTopic);
 
+    QCommandLineOption verboseOption("verbose", "Print debugging info. Warning: ugly.");
+    parser.addOption(verboseOption);
+
     parser.process(a);
 
     try
@@ -100,18 +98,36 @@ int main(int argc, char *argv[])
                 port = 8883;
         }
 
+        if (parser.isSet(verboseOption))
+        {
+            Globals::verbose = true;
+        }
+
+#ifdef Q_OS_LINUX
+        rlim_t rlim = 1000000;
+        if (Globals::verbose)
+            printf("Setting ulimit nofile to %ld.\n", rlim);
+        struct rlimit v = { rlim, rlim };
+        if (setrlimit(RLIMIT_NOFILE, &v) != 0)
+        {
+            fputs(qPrintable("WARNING: Changing ulimit failed.\n"), stderr);
+        }
+#endif
+
         QString hostname = parser.value(hostnameOption);
         QString subscribeTopic = parser.value(passiveSubscribeTopic);
 
-        ClientPool poolActive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), true, amountActive, "active", delay, ssl,
-                              burstInterval, burstSize, overrideReconnectInterval, subscribeTopic, &a);
+        QSharedPointer<ClientPool> poolActive(new ClientPool(hostname, port, parser.value(usernameOption), parser.value(passwordOption), true, amountActive, "active", delay, ssl,
+                              burstInterval, burstSize, overrideReconnectInterval, subscribeTopic, &a));
+        a.addClientPool(poolActive);
         // Create some randomness in starting, in case you're starting more. It helps distribute server load.
-        QTimer::singleShot((qrand() % 10000), &poolActive, &ClientPool::startClients);
+        QTimer::singleShot((qrand() % 10000), poolActive.data(), &ClientPool::startClients);
 
-        ClientPool poolPassive(hostname, port, parser.value(usernameOption), parser.value(passwordOption), false, amountPassive, "passive", delay, ssl,
-                               burstInterval, burstSize, overrideReconnectInterval, subscribeTopic, &a);
+        QSharedPointer<ClientPool> poolPassive(new ClientPool(hostname, port, parser.value(usernameOption), parser.value(passwordOption), false, amountPassive, "passive", delay, ssl,
+                               burstInterval, burstSize, overrideReconnectInterval, subscribeTopic, &a));
+        a.addClientPool(poolPassive);
         // Create some randomness in starting, in case you're starting more. It helps distribute server load.
-        QTimer::singleShot((qrand() % 10000), &poolPassive, &ClientPool::startClients);
+        QTimer::singleShot((qrand() % 10000), poolPassive.data(), &ClientPool::startClients);
 
         return a.exec();
     }

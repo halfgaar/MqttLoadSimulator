@@ -5,6 +5,8 @@
 #include <oneclient.h>
 #include <QStack>
 
+#include "counters.h"
+
 class ClientPool : public QObject
 {
     Q_OBJECT
@@ -20,7 +22,8 @@ public:
                         QObject *parent = nullptr);
     ~ClientPool();
 
-
+    Counters getTotalCounters() const;
+    int getClientCount() const;
 
 signals:
 

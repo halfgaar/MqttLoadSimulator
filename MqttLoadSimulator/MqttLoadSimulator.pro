@@ -18,6 +18,9 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         clientpool.cpp \
+        counters.cpp \
+        globals.cpp \
+        loadsimulator.cpp \
         main.cpp \
         oneclient.cpp \
         utils.cpp
@@ -29,5 +32,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
     clientpool.h \
+    counters.h \
+    globals.h \
+    loadsimulator.h \
     oneclient.h \
     utils.h
