@@ -45,8 +45,8 @@ private slots:
     void onPublishTimerTimeout();
     void onReceived(const QMQTT::Message& message);
 public:
-    OneClient(QString &hostname, quint16 port, QString &username, QString &password, bool pub_and_sub, int clientNr, QString &clientIdPart,
-              bool ssl, QString clientPoolRandomId, const int totalClients, const int delay, int burst_interval, int burst_size, int overrideReconnectInterval,
+    OneClient(const QString &hostname, quint16 port, const QString &username, const QString &password, bool pub_and_sub, int clientNr, const QString &clientIdPart,
+              bool ssl, const QString &clientPoolRandomId, const int totalClients, const int delay, int burst_interval, int burst_size, int overrideReconnectInterval,
               const QString &subscribeTopic, QObject *parent = nullptr);
     ~OneClient();
 

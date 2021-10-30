@@ -9,8 +9,8 @@
 bool OneClient::dnsDone = false;
 QHostInfo OneClient::targetHostInfo;
 
-OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString &password, bool pub_and_sub, int clientNr, QString &clientIdPart,
-                     bool ssl, QString clientPoolRandomId, const int totalClients, const int delay, int burst_interval, int burst_size, int overrideReconnectInterval,
+OneClient::OneClient(const QString &hostname, quint16 port, const QString &username, const QString &password, bool pub_and_sub, int clientNr, const QString &clientIdPart,
+                     bool ssl, const QString &clientPoolRandomId, const int totalClients, const int delay, int burst_interval, int burst_size, int overrideReconnectInterval,
                      const QString &subscribeTopic, QObject *parent) :
     QObject(parent),
     client_id(QString("mqtt_load_tester_%1_%2_%3").arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
@@ -44,23 +44,25 @@ OneClient::OneClient(QString &hostname, quint16 port, QString &username, QString
         this->client = new QMQTT::Client(targetHost, port);
     }
 
+    QString u = username;
     if (username.contains("%1"))
     {
         this->usernameBase = username;
         regenRandomUsername = true;
-        username = QString(this->usernameBase).arg(GetRandomString());
+        u = QString(this->usernameBase).arg(GetRandomString());
     }
 
+    QString p = password;
     if (password.contains("%1"))
     {
         this->passwordBase = password;
         regenRandomPassword = true;
-        password = QString(this->passwordBase).arg(GetRandomString());
+        p = QString(this->passwordBase).arg(GetRandomString());
     }
 
     client->setClientId(client_id);
-    client->setUsername(username);
-    client->setPassword(password.toLatin1());
+    client->setUsername(u);
+    client->setPassword(p.toLatin1());
 
     int keepAlive = 60;
     client->setKeepAlive(keepAlive);
