@@ -5,9 +5,9 @@
 
 #include "globals.h"
 
-// Hack, not thread safe, but we don't need that (for now)
-bool OneClient::dnsDone = false;
-QHostInfo OneClient::targetHostInfo;
+// Hack, not thread safe, but we don't need that (for now). Later: hacked with thread_local
+thread_local bool OneClient::dnsDone = false;
+thread_local QHostInfo OneClient::targetHostInfo;
 
 OneClient::OneClient(const QString &hostname, quint16 port, const QString &username, const QString &password, bool pub_and_sub, int clientNr, const QString &clientIdPart,
                      bool ssl, const QString &clientPoolRandomId, const int totalClients, const int delay, int burst_interval, int burst_size, int overrideReconnectInterval,

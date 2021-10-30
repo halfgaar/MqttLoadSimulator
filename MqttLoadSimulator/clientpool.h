@@ -6,6 +6,7 @@
 #include <QStack>
 
 #include "counters.h"
+#include "poolarguments.h"
 
 class ClientPool : public QObject
 {
@@ -17,9 +18,7 @@ class ClientPool : public QObject
     uint delay;
     QString clientPoolRandomId;
 public:
-    explicit ClientPool(QString hostname, quint16 port, QString username, QString password, bool pub_and_sub, int amount, QString clientIdPart,
-                        uint delay, bool ssl, int burst_interval, int burst_size, int overrideReconnectInterval, const QString &subscribeTopic,
-                        QObject *parent = nullptr);
+    explicit ClientPool(const PoolArguments &args);
     ~ClientPool();
 
     Counters getTotalCounters() const;

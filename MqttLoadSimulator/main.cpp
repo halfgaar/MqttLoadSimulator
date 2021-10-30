@@ -13,6 +13,7 @@
 
 #include "loadsimulator.h"
 #include "globals.h"
+#include "poolarguments.h"
 
 int main(int argc, char *argv[])
 {
@@ -28,10 +29,7 @@ int main(int argc, char *argv[])
                                      "The active clients publish <msg-per-burst> topics, every <burst-interval> mseconds (with randomization added)."
                                      "\n\n"
                                      "It's useful to note that clients with high publish volume are heavier for servers, because it entails more\n"
-                                     "topic parsing, subscriber lookup, etc."
-                                     "\n\n"
-                                     "Also, primarily because Qt has one event loop on the main thread, this app is single threaded and not highly\n"
-                                     "efficient. But, probalby not less than other stress testers I've seen.");
+                                     "topic parsing, subscriber lookup, etc.");
     parser.addHelpOption();
 
     QCommandLineOption hostnameOption("hostname", "Hostname of target. Default: localhost.", "hostname", "localhost");
@@ -117,17 +115,26 @@ int main(int argc, char *argv[])
         QString hostname = parser.value(hostnameOption);
         QString subscribeTopic = parser.value(passiveSubscribeTopic);
 
-        QSharedPointer<ClientPool> poolActive(new ClientPool(hostname, port, parser.value(usernameOption), parser.value(passwordOption), true, amountActive, "active", delay, ssl,
-                              burstInterval, burstSize, overrideReconnectInterval, subscribeTopic, &a));
-        a.addClientPool(poolActive);
-        // Create some randomness in starting, in case you're starting more. It helps distribute server load.
-        QTimer::singleShot((qrand() % 10000), poolActive.data(), &ClientPool::startClients);
+        PoolArguments activePoolArgs;
+        activePoolArgs.hostname = hostname;
+        activePoolArgs.port = port;
+        activePoolArgs.username = parser.value(usernameOption);
+        activePoolArgs.pub_and_sub = true;
+        activePoolArgs.amount = amountActive;
+        activePoolArgs.clientIdPart = "active";
+        activePoolArgs.delay = delay;
+        activePoolArgs.ssl = ssl;
+        activePoolArgs.burst_interval = burstInterval;
+        activePoolArgs.burst_size = burstSize;
+        activePoolArgs.overrideReconnectInterval = overrideReconnectInterval;
+        activePoolArgs.subscribeTopic = subscribeTopic;
+        a.createPoolsBasedOnArgument(activePoolArgs);
 
-        QSharedPointer<ClientPool> poolPassive(new ClientPool(hostname, port, parser.value(usernameOption), parser.value(passwordOption), false, amountPassive, "passive", delay, ssl,
-                               burstInterval, burstSize, overrideReconnectInterval, subscribeTopic, &a));
-        a.addClientPool(poolPassive);
-        // Create some randomness in starting, in case you're starting more. It helps distribute server load.
-        QTimer::singleShot((qrand() % 10000), poolPassive.data(), &ClientPool::startClients);
+        PoolArguments passivePoolArgs(activePoolArgs);
+        passivePoolArgs.pub_and_sub = false;
+        passivePoolArgs.amount = amountPassive;
+        passivePoolArgs.clientIdPart = "passive";
+        a.createPoolsBasedOnArgument(passivePoolArgs);
 
         return a.exec();
     }

@@ -25,8 +25,8 @@ class OneClient : public QObject
 
     Counters counters;
 
-    static bool dnsDone;
-    static QHostInfo targetHostInfo;
+    thread_local static bool dnsDone;
+    thread_local static QHostInfo targetHostInfo;
 
     bool _connected = false;
 

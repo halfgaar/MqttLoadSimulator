@@ -3,9 +3,8 @@
 #include <QThread>
 #include <utils.h>
 
-ClientPool::ClientPool(QString hostname, quint16 port, QString username, QString password, bool pub_and_sub, int amount, QString clientIdPart,
-                       uint delay, bool ssl, int burst_interval, int burst_size, int overrideReconnectInterval, const QString &subscribeTopic,
-                       QObject *parent) : QObject(parent), delay(delay)
+ClientPool::ClientPool(const PoolArguments &args) : QObject(nullptr),
+    delay(args.delay)
 {
     this->clientPoolRandomId = GetRandomString();
 
@@ -16,10 +15,10 @@ ClientPool::ClientPool(QString hostname, quint16 port, QString username, QString
     if (delay > 0)
         connectNextBatchTimer.start();
 
-    for (int i = 0; i < amount; i++)
+    for (int i = 0; i < args.amount; i++)
     {
-        OneClient *oneClient = new OneClient(hostname, port, username, password, pub_and_sub, i, clientIdPart, ssl, this->clientPoolRandomId,
-                                             amount, delay, burst_interval, burst_size, overrideReconnectInterval, subscribeTopic, parent);
+        OneClient *oneClient = new OneClient(args.hostname, args.port, args.username, args.password, args.pub_and_sub, i, args.clientIdPart, args.ssl, this->clientPoolRandomId,
+                                             args.amount, args.delay, args.burst_interval, args.burst_size, args.overrideReconnectInterval, args.subscribeTopic);
         clients.append(oneClient);
         clientsToConnect.push(oneClient);
     }

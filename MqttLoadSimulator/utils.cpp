@@ -27,6 +27,9 @@ QString GetRandomString()
    return randomString;
 }
 
+/**
+ * @brief seedQtrand qsrand() is per thread, so call this per thread.
+ */
 void seedQtrand()
 {
     const size_t s = sizeof (uint);

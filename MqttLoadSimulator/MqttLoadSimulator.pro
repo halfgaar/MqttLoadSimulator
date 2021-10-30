@@ -23,6 +23,9 @@ SOURCES += \
         loadsimulator.cpp \
         main.cpp \
         oneclient.cpp \
+        poolarguments.cpp \
+        poolstarter.cpp \
+        threadloopdriftguage.cpp \
         utils.cpp
 
 # Default rules for deployment.
@@ -36,4 +39,7 @@ HEADERS += \
     globals.h \
     loadsimulator.h \
     oneclient.h \
+    poolarguments.h \
+    poolstarter.h \
+    threadloopdriftguage.h \
     utils.h
