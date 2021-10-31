@@ -4,6 +4,7 @@
 #include <qmqtt.h>
 #include <QTimer>
 #include <QHostInfo>
+#include <QHash>
 
 #include "counters.h"
 
@@ -16,7 +17,7 @@ class OneClient : public QObject
     bool pub_and_sub = false;
     QTimer publishTimer;
 
-    QMQTT::Client *client;
+    QMQTT::Client *client = nullptr;
     QTimer reconnectTimer;
     QString clientPoolRandomId;
 
@@ -25,8 +26,7 @@ class OneClient : public QObject
 
     Counters counters;
 
-    thread_local static bool dnsDone;
-    thread_local static QHostInfo targetHostInfo;
+    thread_local static QHash<QString, QHostInfo> dnsCache;
 
     bool _connected = false;
 

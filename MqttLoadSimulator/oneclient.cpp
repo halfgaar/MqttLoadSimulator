@@ -5,9 +5,7 @@
 
 #include "globals.h"
 
-// Hack, not thread safe, but we don't need that (for now). Later: hacked with thread_local
-thread_local bool OneClient::dnsDone = false;
-thread_local QHostInfo OneClient::targetHostInfo;
+thread_local QHash<QString, QHostInfo> OneClient::dnsCache;
 
 OneClient::OneClient(const QString &hostname, quint16 port, const QString &username, const QString &password, bool pub_and_sub, int clientNr, const QString &clientIdPart,
                      bool ssl, const QString &clientPoolRandomId, const int totalClients, const int delay, int burst_interval, int burst_size, int overrideReconnectInterval,
@@ -31,17 +29,13 @@ OneClient::OneClient(const QString &hostname, quint16 port, const QString &usern
     }
     else
     {
-        QHostAddress targetHost;
-
-        if (!this->dnsDone)
+        if (!dnsCache.contains(hostname))
         {
-            this->targetHostInfo = QHostInfo::fromName(hostname);
-            this->dnsDone = true;
+            dnsCache[hostname] = QHostInfo::fromName(hostname);
         }
 
         // Ehm, why the difference in QMTT::Client's overloaded constructors for SSL and non-SSL?
-        targetHost = targetHostInfo.addresses().first();
-        this->client = new QMQTT::Client(targetHost, port);
+        this->client = new QMQTT::Client(dnsCache[hostname].addresses().first(), port);
     }
 
     QString u = username;
@@ -87,8 +81,12 @@ OneClient::OneClient(const QString &hostname, quint16 port, const QString &usern
 
 OneClient::~OneClient()
 {
-    client->disconnectFromHost();
-    delete client;
+    if (client)
+    {
+        client->disconnectFromHost();
+        delete client;
+        client = nullptr;
+    }
 }
 
 Counters OneClient::getCounters() const

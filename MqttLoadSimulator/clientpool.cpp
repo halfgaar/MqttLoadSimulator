@@ -15,9 +15,15 @@ ClientPool::ClientPool(const PoolArguments &args) : QObject(nullptr),
     if (delay > 0)
         connectNextBatchTimer.start();
 
+    QStringList hostnameList = args.hostnameList.split(",", QString::SplitBehavior::SkipEmptyParts);
+
+    if (hostnameList.isEmpty() && !args.hostname.isEmpty())
+        hostnameList.append(args.hostname);
+
     for (int i = 0; i < args.amount; i++)
     {
-        OneClient *oneClient = new OneClient(args.hostname, args.port, args.username, args.password, args.pub_and_sub, i, args.clientIdPart, args.ssl, this->clientPoolRandomId,
+        const QString &hostname = hostnameList[i % hostnameList.size()];
+        OneClient *oneClient = new OneClient(hostname, args.port, args.username, args.password, args.pub_and_sub, i, args.clientIdPart, args.ssl, this->clientPoolRandomId,
                                              args.amount, args.delay, args.burst_interval, args.burst_size, args.overrideReconnectInterval, args.subscribeTopic);
         clients.append(oneClient);
         clientsToConnect.push(oneClient);

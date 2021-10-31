@@ -35,6 +35,11 @@ int main(int argc, char *argv[])
     QCommandLineOption hostnameOption("hostname", "Hostname of target. Default: localhost.", "hostname", "localhost");
     parser.addOption(hostnameOption);
 
+    QCommandLineOption hostnameListOption("hostname-list", "Comma-separated list of hostnames clients will pick round-robin. You need to give a server "
+                                                           "multiple IPs and use this when testing more than 30k-ish connections, to work around the TCP "
+                                                           "ephemeral port limit.", "list");
+    parser.addOption(hostnameListOption);
+
     QCommandLineOption portOption("port", "Target port. Default: 1883|8883", "port", "1883");
     parser.addOption(portOption);
 
@@ -112,11 +117,9 @@ int main(int argc, char *argv[])
         }
 #endif
 
-        QString hostname = parser.value(hostnameOption);
-        QString subscribeTopic = parser.value(passiveSubscribeTopic);
-
         PoolArguments activePoolArgs;
-        activePoolArgs.hostname = hostname;
+        activePoolArgs.hostname = parser.value(hostnameOption);
+        activePoolArgs.hostnameList = parser.value(hostnameListOption);
         activePoolArgs.port = port;
         activePoolArgs.username = parser.value(usernameOption);
         activePoolArgs.pub_and_sub = true;
@@ -127,7 +130,7 @@ int main(int argc, char *argv[])
         activePoolArgs.burst_interval = burstInterval;
         activePoolArgs.burst_size = burstSize;
         activePoolArgs.overrideReconnectInterval = overrideReconnectInterval;
-        activePoolArgs.subscribeTopic = subscribeTopic;
+        activePoolArgs.subscribeTopic = parser.value(passiveSubscribeTopic);
         a.createPoolsBasedOnArgument(activePoolArgs);
 
         PoolArguments passivePoolArgs(activePoolArgs);

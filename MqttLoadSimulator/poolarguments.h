@@ -6,6 +6,7 @@
 struct PoolArguments
 {
     QString hostname;
+    QString hostnameList;
     quint16 port;
     QString username;
     QString password;
