@@ -8,8 +8,8 @@
 thread_local QHash<QString, QHostInfo> OneClient::dnsCache;
 
 OneClient::OneClient(const QString &hostname, quint16 port, const QString &username, const QString &password, bool pub_and_sub, int clientNr, const QString &clientIdPart,
-                     bool ssl, const QString &clientPoolRandomId, const int totalClients, const int delay, int burst_interval, int burst_size, int overrideReconnectInterval,
-                     const QString &subscribeTopic, QObject *parent) :
+                     bool ssl, const QString &clientPoolRandomId, const int totalClients, const int delay, int burst_interval, const uint burst_spread,
+                     int burst_size, int overrideReconnectInterval, const QString &subscribeTopic, QObject *parent) :
     QObject(parent),
     client_id(QString("mqtt_load_tester_%1_%2_%3").arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
     clientNr(clientNr),
@@ -66,7 +66,9 @@ OneClient::OneClient(const QString &hostname, quint16 port, const QString &usern
     connect(client, &QMQTT::Client::error, this, &OneClient::onClientError);
     connect(client, &QMQTT::Client::received, this, &OneClient::onReceived);
 
-    int interval = (qrand() % burst_interval) + 1000;
+    int spread = burst_spread/2 - (qrand() % burst_spread);
+    int interval = burst_interval + spread;
+    interval = std::max<int>(1, interval);
 
     publishTimer.setInterval(interval);
     publishTimer.setSingleShot(false);

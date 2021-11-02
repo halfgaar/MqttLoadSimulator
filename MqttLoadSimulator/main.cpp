@@ -63,8 +63,11 @@ int main(int argc, char *argv[])
     QCommandLineOption clientStartupDelayOption("delay", "Wait <ms> milliseconds between each connecting client", "ms", "0");
     parser.addOption(clientStartupDelayOption);
 
-    QCommandLineOption clientBurstIntervaltOption("burst-interval", "Publish <msg-per-burst> messages per <burst interval> (+/- random spread). DEFAULT: 3000", "ms", "3000");
+    QCommandLineOption clientBurstIntervaltOption("burst-interval", "Publish <msg-per-burst> messages per <burst interval>. DEFAULT: 3000", "ms", "3000");
     parser.addOption(clientBurstIntervaltOption);
+
+    QCommandLineOption clientBurstIntervalSpreadOption("burst-spread", "Add (burst_spread/2 - (RAND() % burst_spread)) to burst-interval. Default: 1000", "ms", "1000");
+    parser.addOption(clientBurstIntervalSpreadOption);
 
     QCommandLineOption clientMessageCountPerBurstOption("msg-per-burst", "Publish x messages per <burst interval>. Default: 25", "amount", "25");
     parser.addOption(clientMessageCountPerBurstOption);
@@ -86,6 +89,7 @@ int main(int argc, char *argv[])
         const int amountActive = parseIntOption<int>(parser, amountActiveOption);
         const int amountPassive = parseIntOption<int>(parser, amountPassiveOption);
         const int burstInterval = parseIntOption<int>(parser, clientBurstIntervaltOption);
+        const uint burst_spread = parseIntOption<uint>(parser, clientBurstIntervalSpreadOption);
         const int burstSize = parseIntOption<int>(parser, clientMessageCountPerBurstOption);
         const int overrideReconnectInterval = parseIntOption<int>(parser, overrideReconnectIntervalOption);
         const uint delay = parseIntOption<uint>(parser, clientStartupDelayOption);
@@ -128,6 +132,7 @@ int main(int argc, char *argv[])
         activePoolArgs.delay = delay;
         activePoolArgs.ssl = ssl;
         activePoolArgs.burst_interval = burstInterval;
+        activePoolArgs.burst_spread = burst_spread;
         activePoolArgs.burst_size = burstSize;
         activePoolArgs.overrideReconnectInterval = overrideReconnectInterval;
         activePoolArgs.subscribeTopic = parser.value(passiveSubscribeTopic);

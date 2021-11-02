@@ -16,6 +16,7 @@ struct PoolArguments
     uint delay = 0;
     bool ssl = false;
     int burst_interval = 0;
+    uint burst_spread = 0;
     int burst_size = 0;
     int overrideReconnectInterval = -1;
     QString subscribeTopic;
