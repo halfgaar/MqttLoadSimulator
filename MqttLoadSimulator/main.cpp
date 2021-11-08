@@ -14,6 +14,7 @@
 #include "loadsimulator.h"
 #include "globals.h"
 #include "poolarguments.h"
+#include "clientnumberpool.h"
 
 int main(int argc, char *argv[])
 {
@@ -63,20 +64,27 @@ int main(int argc, char *argv[])
     QCommandLineOption clientStartupDelayOption("delay", "Wait <ms> milliseconds between each connecting client", "ms", "0");
     parser.addOption(clientStartupDelayOption);
 
-    QCommandLineOption clientBurstIntervaltOption("burst-interval", "Publish <msg-per-burst> messages per <burst interval>. DEFAULT: 3000", "ms", "3000");
+    QCommandLineOption clientBurstIntervaltOption("burst-interval", "Publish <msg-per-burst> messages per <burst interval>, per client. DEFAULT: 3000", "ms", "3000");
     parser.addOption(clientBurstIntervaltOption);
 
     QCommandLineOption clientBurstIntervalSpreadOption("burst-spread", "Add (burst_spread/2 - (RAND() % burst_spread)) to burst-interval. Default: 1000", "ms", "1000");
     parser.addOption(clientBurstIntervalSpreadOption);
 
-    QCommandLineOption clientMessageCountPerBurstOption("msg-per-burst", "Publish x messages per <burst interval>. Default: 25", "amount", "25");
+    QCommandLineOption clientMessageCountPerBurstOption("msg-per-burst", "Publish x messages per <burst interval>, per client. Default: 25", "amount", "25");
     parser.addOption(clientMessageCountPerBurstOption);
 
     QCommandLineOption overrideReconnectIntervalOption("reconnect-interval", "Time between reconnect on error. Default: dynamic.", "ms", "-1");
     parser.addOption(overrideReconnectIntervalOption);
 
-    QCommandLineOption passiveSubscribeTopic("subscribe-topic", "Topic for passive clients to subscribe to. Default: random per client", "topic");
-    parser.addOption(passiveSubscribeTopic);
+    QCommandLineOption topic("topic", "Topic for passive clients to subscribe to and active clients to publish to. Any occurance of %1 is "
+                                      "replaced by a number per client, modulo <topic-modulo>. Default: random per client", "topic");
+    parser.addOption(topic);
+
+    QCommandLineOption topicModuloOption("topic-modulo", "When using --topic, the counter modulo for '%1'. Default: 1000", "modulo", "1000");
+    parser.addOption(topicModuloOption);
+
+    QCommandLineOption incrementTopicPerPublish("increment-topic-per-publish", "Use the '%1' in --topic to increment per publish.");
+    parser.addOption(incrementTopicPerPublish);
 
     QCommandLineOption verboseOption("verbose", "Print debugging info. Warning: ugly.");
     parser.addOption(verboseOption);
@@ -93,6 +101,7 @@ int main(int argc, char *argv[])
         const int burstSize = parseIntOption<int>(parser, clientMessageCountPerBurstOption);
         const int overrideReconnectInterval = parseIntOption<int>(parser, overrideReconnectIntervalOption);
         const uint delay = parseIntOption<uint>(parser, clientStartupDelayOption);
+        const uint modulo = parseIntOption<uint>(parser, topicModuloOption);
 
         if (burstInterval <= 0)
             throw ArgumentException("Burst interval must be > 0");
@@ -109,6 +118,8 @@ int main(int argc, char *argv[])
         {
             Globals::verbose = true;
         }
+
+        ClientNumberPool::setModulo(modulo);
 
 #ifdef Q_OS_LINUX
         rlim_t rlim = 1000000;
@@ -135,7 +146,8 @@ int main(int argc, char *argv[])
         activePoolArgs.burst_spread = burst_spread;
         activePoolArgs.burst_size = burstSize;
         activePoolArgs.overrideReconnectInterval = overrideReconnectInterval;
-        activePoolArgs.subscribeTopic = parser.value(passiveSubscribeTopic);
+        activePoolArgs.topic = parser.value(topic);
+        activePoolArgs.incrementTopicPerPublish = parser.isSet(incrementTopicPerPublish);
         a.createPoolsBasedOnArgument(activePoolArgs);
 
         PoolArguments passivePoolArgs(activePoolArgs);

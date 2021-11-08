@@ -17,6 +17,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += \
+        clientnumberpool.cpp \
         clientpool.cpp \
         counters.cpp \
         globals.cpp \
@@ -34,6 +35,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
+    clientnumberpool.h \
     clientpool.h \
     counters.h \
     globals.h \

@@ -4,12 +4,13 @@
 #include <QSslConfiguration>
 
 #include "globals.h"
+#include "clientnumberpool.h"
 
 thread_local QHash<QString, QHostInfo> OneClient::dnsCache;
 
 OneClient::OneClient(const QString &hostname, quint16 port, const QString &username, const QString &password, bool pub_and_sub, int clientNr, const QString &clientIdPart,
                      bool ssl, const QString &clientPoolRandomId, const int totalClients, const int delay, int burst_interval, const uint burst_spread,
-                     int burst_size, int overrideReconnectInterval, const QString &subscribeTopic, QObject *parent) :
+                     int burst_size, int overrideReconnectInterval, const QString &topic, bool incrementTopicPerPublish, QObject *parent) :
     QObject(parent),
     client_id(QString("mqtt_load_tester_%1_%2_%3").arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
     clientNr(clientNr),
@@ -17,8 +18,9 @@ OneClient::OneClient(const QString &hostname, quint16 port, const QString &usern
     publishTimer(this),
     clientPoolRandomId(clientPoolRandomId),
     burstSize(burst_size),
-    topicString(QString("/loadtester/clientpool_%1/%2/hellofromtheloadtester").arg(this->clientPoolRandomId).arg(this->clientNr)),
-    subscribeTopic(subscribeTopic)
+    topicBase(topic),
+    payloadBase(QString("Client %1 publish counter: %2").arg(client_id)),
+    incrementTopicPerPublish(incrementTopicPerPublish)
 {
     if (ssl)
     {
@@ -36,6 +38,36 @@ OneClient::OneClient(const QString &hostname, quint16 port, const QString &usern
 
         // Ehm, why the difference in QMTT::Client's overloaded constructors for SSL and non-SSL?
         this->client = new QMQTT::Client(dnsCache[hostname].addresses().first(), port);
+    }
+
+    if (!topic.isEmpty())
+    {
+        if (topic.contains("%1"))
+        {
+            int nr = ClientNumberPool::getClientNr();
+            subscribeTopic = QString(topic).arg(nr);
+
+            if (pub_and_sub)
+                publishTopic = subscribeTopic;
+        }
+        else
+        {
+            subscribeTopic = topic;
+            publishTopic = topic;
+        }
+    }
+    else
+    {
+        if (pub_and_sub)
+        {
+            publishTopic = QString("loadtester/clientpool_%1/%2/hellofromtheloadtester").arg(this->clientPoolRandomId).arg(this->clientNr);
+            subscribeTopic = QString("loadtester/clientpool_%1/%2/#").arg(this->clientPoolRandomId).arg(this->clientNr - 1);
+        }
+        else
+        {
+            QString ran = GetRandomString();
+            subscribeTopic = QString("silentpath/%1/#").arg(ran);
+        }
     }
 
     QString u = username;
@@ -116,25 +148,23 @@ void OneClient::connected()
 
     if (this->pub_and_sub)
     {
-        QString topic = QString("/loadtester/clientpool_%1/%2/#").arg(this->clientPoolRandomId).arg(this->clientNr - 1);
         if (Globals::verbose)
-            std::cout << qPrintable(QString("Subscribing to '%1'\n").arg(topic));
-        client->subscribe(topic);
+        {
+            std::cout << qPrintable(QString("Subscribing to '%1'\n").arg(subscribeTopic));
+
+            if (incrementTopicPerPublish && topicBase.contains("%1"))
+                std::cout << qPrintable(QString("Publishing to '%1' (and increasing number per publish)\n").arg(publishTopic));
+            else
+                std::cout << qPrintable(QString("Publishing to '%1'\n").arg(publishTopic));
+        }
+        client->subscribe(subscribeTopic);
         publishTimer.start();
     }
     else
     {
-        QString topic = this->subscribeTopic;
-
-        if (topic.isEmpty())
-        {
-            QString ran = GetRandomString();
-            topic = QString("/silentpath/%1/#").arg(ran);
-        }
-
         if (Globals::verbose)
-            std::cout << qPrintable(QString("Subscribing to '%1'\n").arg(topic));
-        client->subscribe(topic);
+            std::cout << qPrintable(QString("Subscribing to '%1'\n").arg(subscribeTopic));
+        client->subscribe(subscribeTopic);
     }
 }
 
@@ -203,8 +233,14 @@ void OneClient::onPublishTimerTimeout()
 
     for (int i = 0; i < burstSize; i++)
     {
-        QString payload = QString("Client %1 publish counter: %2").arg(client_id).arg(counters.publish);
-        QMQTT::Message msg(0, topicString, payload.toUtf8());
+        if (incrementTopicPerPublish)
+        {
+            const int nr = ClientNumberPool::getClientNr();
+            publishTopic = QString(topicBase).arg(nr);
+        }
+
+        QString payload = payloadBase.arg(counters.publish);
+        QMQTT::Message msg(0, publishTopic, payload.toUtf8());
         client->publish(msg);
         counters.publish++;
     }

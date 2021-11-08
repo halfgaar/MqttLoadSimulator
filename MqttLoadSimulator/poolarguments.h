@@ -19,8 +19,8 @@ struct PoolArguments
     uint burst_spread = 0;
     int burst_size = 0;
     int overrideReconnectInterval = -1;
-    QString subscribeTopic;
-
+    bool incrementTopicPerPublish = false;
+    QString topic;
 };
 
 #endif // POOLARGUMENTS_H
