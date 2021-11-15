@@ -12,7 +12,7 @@ OneClient::OneClient(const QString &hostname, quint16 port, const QString &usern
                      bool ssl, const QString &clientPoolRandomId, const int totalClients, const int delay, int burst_interval, const uint burst_spread,
                      int burst_size, int overrideReconnectInterval, const QString &topic, bool incrementTopicPerPublish, QObject *parent) :
     QObject(parent),
-    client_id(QString("mqtt_load_tester_%1_%2_%3").arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
+    client_id(QString("%1_%2_%3_%4").arg(QHostInfo::localHostName()).arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
     clientNr(clientNr),
     pub_and_sub(pub_and_sub),
     publishTimer(this),
