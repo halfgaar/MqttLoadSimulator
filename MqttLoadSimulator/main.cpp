@@ -80,6 +80,9 @@ int main(int argc, char *argv[])
                                       "replaced by a number per client, modulo <topic-modulo>. Default: random per client", "topic");
     parser.addOption(topic);
 
+    QCommandLineOption qosOption("qos", "QoS of publish and subscribe. Default: 0", "qos", "0");
+    parser.addOption(qosOption);
+
     QCommandLineOption topicModuloOption("topic-modulo", "When using --topic, the counter modulo for '%1'. Default: 1000", "modulo", "1000");
     parser.addOption(topicModuloOption);
 
@@ -102,9 +105,13 @@ int main(int argc, char *argv[])
         const int overrideReconnectInterval = parseIntOption<int>(parser, overrideReconnectIntervalOption);
         const uint delay = parseIntOption<uint>(parser, clientStartupDelayOption);
         const uint modulo = parseIntOption<uint>(parser, topicModuloOption);
+        const uint qos = parseIntOption<uint>(parser, qosOption);
 
         if (burstInterval <= 0)
             throw ArgumentException("Burst interval must be > 0");
+
+        if (qos > 2)
+            throw ArgumentException("QoS must be <= 2");
 
         bool ssl = false;
         if (parser.isSet(sslOption))
@@ -147,6 +154,7 @@ int main(int argc, char *argv[])
         activePoolArgs.burst_size = burstSize;
         activePoolArgs.overrideReconnectInterval = overrideReconnectInterval;
         activePoolArgs.topic = parser.value(topic);
+        activePoolArgs.qos = qos;
         activePoolArgs.incrementTopicPerPublish = parser.isSet(incrementTopicPerPublish);
         a.createPoolsBasedOnArgument(activePoolArgs);
 

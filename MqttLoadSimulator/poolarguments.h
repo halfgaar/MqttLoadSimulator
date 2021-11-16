@@ -21,6 +21,7 @@ struct PoolArguments
     int overrideReconnectInterval = -1;
     bool incrementTopicPerPublish = false;
     QString topic;
+    uint qos;
 };
 
 #endif // POOLARGUMENTS_H

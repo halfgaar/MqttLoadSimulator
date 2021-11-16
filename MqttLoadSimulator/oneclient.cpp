@@ -10,7 +10,7 @@ thread_local QHash<QString, QHostInfo> OneClient::dnsCache;
 
 OneClient::OneClient(const QString &hostname, quint16 port, const QString &username, const QString &password, bool pub_and_sub, int clientNr, const QString &clientIdPart,
                      bool ssl, const QString &clientPoolRandomId, const int totalClients, const int delay, int burst_interval, const uint burst_spread,
-                     int burst_size, int overrideReconnectInterval, const QString &topic, bool incrementTopicPerPublish, QObject *parent) :
+                     int burst_size, int overrideReconnectInterval, const QString &topic, uint qos, bool incrementTopicPerPublish, QObject *parent) :
     QObject(parent),
     client_id(QString("%1_%2_%3_%4").arg(QHostInfo::localHostName()).arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
     clientNr(clientNr),
@@ -20,6 +20,7 @@ OneClient::OneClient(const QString &hostname, quint16 port, const QString &usern
     burstSize(burst_size),
     topicBase(topic),
     payloadBase(QString("Client %1 publish counter: %2").arg(client_id)),
+    qos(qos),
     incrementTopicPerPublish(incrementTopicPerPublish)
 {
     if (ssl)
@@ -157,7 +158,7 @@ void OneClient::connected()
             else
                 std::cout << qPrintable(QString("Publishing to '%1'\n").arg(publishTopic));
         }
-        client->subscribe(subscribeTopic);
+        client->subscribe(subscribeTopic, this->qos);
         publishTimer.start();
     }
     else
@@ -240,7 +241,7 @@ void OneClient::onPublishTimerTimeout()
         }
 
         QString payload = payloadBase.arg(counters.publish);
-        QMQTT::Message msg(0, publishTopic, payload.toUtf8());
+        QMQTT::Message msg(0, publishTopic, payload.toUtf8(), this->qos);
         client->publish(msg);
         counters.publish++;
     }
