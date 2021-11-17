@@ -10,9 +10,10 @@ thread_local QHash<QString, QHostInfo> OneClient::dnsCache;
 
 OneClient::OneClient(const QString &hostname, quint16 port, const QString &username, const QString &password, bool pub_and_sub, int clientNr, const QString &clientIdPart,
                      bool ssl, const QString &clientPoolRandomId, const int totalClients, const int delay, int burst_interval, const uint burst_spread,
-                     int burst_size, int overrideReconnectInterval, const QString &topic, uint qos, bool incrementTopicPerPublish, QObject *parent) :
+                     int burst_size, int overrideReconnectInterval, const QString &topic, uint qos, bool incrementTopicPerPublish,
+                     const QString &clientid, bool cleanSession, QObject *parent) :
     QObject(parent),
-    client_id(QString("%1_%2_%3_%4").arg(QHostInfo::localHostName()).arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
+    client_id(!clientid.isEmpty() ? clientid : QString("%1_%2_%3_%4").arg(QHostInfo::localHostName()).arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
     clientNr(clientNr),
     pub_and_sub(pub_and_sub),
     publishTimer(this),
@@ -90,6 +91,7 @@ OneClient::OneClient(const QString &hostname, quint16 port, const QString &usern
     client->setClientId(client_id);
     client->setUsername(u);
     client->setPassword(p.toLatin1());
+    client->setCleanSession(cleanSession);
 
     int keepAlive = 60;
     client->setKeepAlive(keepAlive);

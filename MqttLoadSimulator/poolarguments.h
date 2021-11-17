@@ -22,6 +22,8 @@ struct PoolArguments
     bool incrementTopicPerPublish = false;
     QString topic;
     uint qos;
+    QString clientid;
+    bool cleanSession = true;
 };
 
 #endif // POOLARGUMENTS_H

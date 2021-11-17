@@ -83,6 +83,13 @@ int main(int argc, char *argv[])
     QCommandLineOption qosOption("qos", "QoS of publish and subscribe. Default: 0", "qos", "0");
     parser.addOption(qosOption);
 
+    QCommandLineOption clientidOption("client-id", "Fixed client ID. Because MQTT is forced to disconnect on existing client ID, you can use this to "
+                                                   "brute-force test session hand-over/destruction. Default: random", "clientid");
+    parser.addOption(clientidOption);
+
+    QCommandLineOption disableCleanSessionOption("disable-clean-session", "Duh.");
+    parser.addOption(disableCleanSessionOption);
+
     QCommandLineOption topicModuloOption("topic-modulo", "When using --topic, the counter modulo for '%1'. Default: 1000", "modulo", "1000");
     parser.addOption(topicModuloOption);
 
@@ -156,6 +163,8 @@ int main(int argc, char *argv[])
         activePoolArgs.topic = parser.value(topic);
         activePoolArgs.qos = qos;
         activePoolArgs.incrementTopicPerPublish = parser.isSet(incrementTopicPerPublish);
+        activePoolArgs.clientid = parser.value(clientidOption);
+        activePoolArgs.cleanSession = !parser.isSet(disableCleanSessionOption);
         a.createPoolsBasedOnArgument(activePoolArgs);
 
         PoolArguments passivePoolArgs(activePoolArgs);
