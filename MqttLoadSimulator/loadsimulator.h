@@ -42,6 +42,7 @@ private slots:
     void onStatsTimeout();
 public:
     explicit LoadSimulator(int &argc, char **argv);
+    ~LoadSimulator();
     void createPoolsBasedOnArgument(const PoolArguments &args);
 
 signals:

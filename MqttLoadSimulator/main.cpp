@@ -19,9 +19,8 @@
 int main(int argc, char *argv[])
 {
     LoadSimulator a(argc, argv);
+    a.setApplicationVersion(APPLICATION_VERSION);
     seedQtrand();
-
-
 
     QCommandLineParser parser;
     parser.setApplicationDescription("MQTT load simulator. The active clients subscribe to the topics of every previous active clients.\nThe passive "
@@ -99,10 +98,19 @@ int main(int argc, char *argv[])
     QCommandLineOption verboseOption("verbose", "Print debugging info. Warning: ugly.");
     parser.addOption(verboseOption);
 
+    QCommandLineOption versionOption("version", "Show version.");
+    parser.addOption(versionOption);
+
     parser.process(a);
 
     try
     {
+        if (parser.isSet(versionOption))
+        {
+            printf("MqttLoadSimulator Version: %s\n", qPrintable(QCoreApplication::applicationVersion()));
+            return 0;
+        }
+
         quint16 port = parseIntOption<quint16>(parser, portOption);
         const int amountActive = parseIntOption<int>(parser, amountActiveOption);
         const int amountPassive = parseIntOption<int>(parser, amountPassiveOption);

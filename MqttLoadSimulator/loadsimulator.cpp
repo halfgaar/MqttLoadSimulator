@@ -31,6 +31,15 @@ LoadSimulator::LoadSimulator(int &argc, char **argv) : QCoreApplication(argc, ar
     }
 }
 
+LoadSimulator::~LoadSimulator()
+{
+    for(auto &t : threads)
+    {
+        t->quit();
+        t->wait();
+    }
+}
+
 /**
  * @brief LoadSimulator::createPoolsBasedOnArgument creates as many clients as specified by args, but divides them over the threads.
  * @param args
@@ -132,13 +141,14 @@ void LoadSimulator::onStatsTimeout()
     Drift drift = getAvgDriftLoop();
 
     std::string driftString = getDriftString(drift);
-    std::string line = formatString("\r\033[01mClients\033[00m: %d on %d threads. "
+    std::string line = formatString("\rVersion: %s. \033[01mClients\033[00m: %d on %d threads. "
                                     "\033[01mSent\033[00m: %ld (\033[01;36m%ld/s\033[00m). "
                                     "\033[01mRecv\033[00m: %ld (\033[01;36m%ld/s\033[00m). "
                                     "\033[01mConnects\033[00m: %ld (\033[01;36m%ld/s\033[00m). "
                                     "\033[01mDisconnects\033[00m: %ld (\033[01;36m%ld/s\033[00m). "
                                     "\033[01mErrors\033[00m: %ld (\033[01;36m%ld/s\033[00m). "
                                     "\nThread loop drift: %s",
+                                    applicationVersion().toStdString().c_str(),
                                     totalClients, threads.size(), cnt.publish, diff.publish, cnt.received, diff.received, cnt.connect, diff.connect,
                                     cnt.disconnect, diff.disconnect, cnt.error, diff.error, driftString.c_str());
 
