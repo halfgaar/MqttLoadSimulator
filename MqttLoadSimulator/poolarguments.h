@@ -19,7 +19,7 @@ struct PoolArguments
     uint burst_spread = 0;
     int burst_size = 0;
     int overrideReconnectInterval = -1;
-    bool incrementTopicPerPublish = false;
+    bool incrementTopicPerBurst = false;
     QString topic;
     uint qos;
     QString clientid;

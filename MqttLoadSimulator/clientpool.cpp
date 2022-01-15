@@ -25,7 +25,7 @@ ClientPool::ClientPool(const PoolArguments &args) : QObject(nullptr),
         const QString &hostname = hostnameList[i % hostnameList.size()];
         OneClient *oneClient = new OneClient(hostname, args.port, args.username, args.password, args.pub_and_sub, i, args.clientIdPart, args.ssl, this->clientPoolRandomId,
                                              args.amount, args.delay, args.burst_interval, args.burst_spread, args.burst_size, args.overrideReconnectInterval, args.topic,
-                                             args.qos, args.incrementTopicPerPublish, args.clientid, args.cleanSession);
+                                             args.qos, args.incrementTopicPerBurst, args.clientid, args.cleanSession);
         clients.append(oneClient);
         clientsToConnect.push(oneClient);
     }

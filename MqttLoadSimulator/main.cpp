@@ -93,8 +93,8 @@ int main(int argc, char *argv[])
     QCommandLineOption topicModuloOption("topic-modulo", "When using --topic, the counter modulo for '%1'. Default: 1000", "modulo", "1000");
     parser.addOption(topicModuloOption);
 
-    QCommandLineOption incrementTopicPerPublish("increment-topic-per-publish", "Use the '%1' in --topic to increment per publish.");
-    parser.addOption(incrementTopicPerPublish);
+    QCommandLineOption incrementTopicPerBurst("increment-topic-per-burst", "Use the '%1' in --topic to increment per publish burst.");
+    parser.addOption(incrementTopicPerBurst);
 
     QCommandLineOption verboseOption("verbose", "Print debugging info. Warning: ugly.");
     parser.addOption(verboseOption);
@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
         activePoolArgs.overrideReconnectInterval = overrideReconnectInterval;
         activePoolArgs.topic = parser.value(topic);
         activePoolArgs.qos = qos;
-        activePoolArgs.incrementTopicPerPublish = parser.isSet(incrementTopicPerPublish);
+        activePoolArgs.incrementTopicPerBurst = parser.isSet(incrementTopicPerBurst);
         activePoolArgs.clientid = parser.value(clientidOption);
         activePoolArgs.cleanSession = !parser.isSet(disableCleanSessionOption);
         a.createPoolsBasedOnArgument(activePoolArgs);

@@ -38,7 +38,7 @@ class OneClient : public QObject
     QString passwordBase;
     bool regenRandomUsername = false;
     bool regenRandomPassword = false;
-    const bool incrementTopicPerPublish;
+    const bool incrementTopicPerBurst;
 
 private slots:
 
@@ -50,7 +50,7 @@ private slots:
 public:
     OneClient(const QString &hostname, quint16 port, const QString &username, const QString &password, bool pub_and_sub, int clientNr, const QString &clientIdPart,
               bool ssl, const QString &clientPoolRandomId, const int totalClients, const int delay, int burst_interval, const uint burst_spread,
-              int burst_size, int overrideReconnectInterval, const QString &topic, uint qos, bool incrementTopicPerPublish,
+              int burst_size, int overrideReconnectInterval, const QString &topic, uint qos, bool incrementTopicPerBurst,
               const QString &clientid, bool cleanSession, QObject *parent = nullptr);
     ~OneClient();
 

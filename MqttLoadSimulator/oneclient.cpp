@@ -10,7 +10,7 @@ thread_local QHash<QString, QHostInfo> OneClient::dnsCache;
 
 OneClient::OneClient(const QString &hostname, quint16 port, const QString &username, const QString &password, bool pub_and_sub, int clientNr, const QString &clientIdPart,
                      bool ssl, const QString &clientPoolRandomId, const int totalClients, const int delay, int burst_interval, const uint burst_spread,
-                     int burst_size, int overrideReconnectInterval, const QString &topic, uint qos, bool incrementTopicPerPublish,
+                     int burst_size, int overrideReconnectInterval, const QString &topic, uint qos, bool incrementTopicPerBurst,
                      const QString &clientid, bool cleanSession, QObject *parent) :
     QObject(parent),
     client_id(!clientid.isEmpty() ? clientid : QString("%1_%2_%3_%4").arg(QHostInfo::localHostName()).arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
@@ -22,7 +22,7 @@ OneClient::OneClient(const QString &hostname, quint16 port, const QString &usern
     topicBase(topic),
     payloadBase(QString("Client %1 publish counter: %2").arg(client_id)),
     qos(qos),
-    incrementTopicPerPublish(incrementTopicPerPublish)
+    incrementTopicPerBurst(incrementTopicPerBurst)
 {
     if (ssl)
     {
@@ -155,7 +155,7 @@ void OneClient::connected()
         {
             std::cout << qPrintable(QString("Subscribing to '%1'\n").arg(subscribeTopic));
 
-            if (incrementTopicPerPublish && topicBase.contains("%1"))
+            if (incrementTopicPerBurst && topicBase.contains("%1"))
                 std::cout << qPrintable(QString("Publishing to '%1' (and increasing number per publish)\n").arg(publishTopic));
             else
                 std::cout << qPrintable(QString("Publishing to '%1'\n").arg(publishTopic));
@@ -236,16 +236,16 @@ void OneClient::onPublishTimerTimeout()
 
     for (int i = 0; i < burstSize; i++)
     {
-        if (incrementTopicPerPublish)
-        {
-            const int nr = ClientNumberPool::getClientNr();
-            publishTopic = QString(topicBase).arg(nr);
-        }
-
         QString payload = payloadBase.arg(counters.publish);
         QMQTT::Message msg(0, publishTopic, payload.toUtf8(), this->qos);
         client->publish(msg);
         counters.publish++;
+    }
+
+    if (incrementTopicPerBurst)
+    {
+        const int nr = ClientNumberPool::getClientNr();
+        publishTopic = QString(topicBase).arg(nr);
     }
 }
 
