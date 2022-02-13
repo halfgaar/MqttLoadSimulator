@@ -40,10 +40,10 @@ class OneClient : public QObject
     bool regenRandomPassword = false;
     const bool incrementTopicPerBurst;
 
-    quint8 packetid = 0;
+    quint16 packetid = 0;
 
 private:
-    quint8 getNextPacketPacketID();
+    quint16 getNextPacketPacketID();
 
 private slots:
 

@@ -147,7 +147,7 @@ void OneClient::connectToHost()
  *
  * We have to do this ourselves, because QMQTT has a bug, in which is wraps around back to use the invalid value of 0.
  */
-quint8 OneClient::getNextPacketPacketID()
+quint16 OneClient::getNextPacketPacketID()
 {
     this->packetid++;
     if (this->packetid == 0)
