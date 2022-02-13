@@ -141,6 +141,20 @@ void OneClient::connectToHost()
     }
 }
 
+/**
+ * @brief OneClient::getNextPacketPacketID gets the next packet ID
+ * @return
+ *
+ * We have to do this ourselves, because QMQTT has a bug, in which is wraps around back to use the invalid value of 0.
+ */
+quint8 OneClient::getNextPacketPacketID()
+{
+    this->packetid++;
+    if (this->packetid == 0)
+        this->packetid++;
+    return this->packetid;
+}
+
 void OneClient::connected()
 {
     _connected = true;
@@ -237,7 +251,7 @@ void OneClient::onPublishTimerTimeout()
     for (int i = 0; i < burstSize; i++)
     {
         QString payload = payloadBase.arg(counters.publish);
-        QMQTT::Message msg(0, publishTopic, payload.toUtf8(), this->qos);
+        QMQTT::Message msg(getNextPacketPacketID(), publishTopic, payload.toUtf8(), this->qos);
         client->publish(msg);
         counters.publish++;
     }
