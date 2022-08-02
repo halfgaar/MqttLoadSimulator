@@ -159,6 +159,7 @@ int main(int argc, char *argv[])
         activePoolArgs.hostnameList = parser.value(hostnameListOption);
         activePoolArgs.port = port;
         activePoolArgs.username = parser.value(usernameOption);
+        activePoolArgs.password = parser.value(passwordOption);
         activePoolArgs.pub_and_sub = true;
         activePoolArgs.amount = amountActive;
         activePoolArgs.clientIdPart = "active";

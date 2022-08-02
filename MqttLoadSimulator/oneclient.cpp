@@ -90,7 +90,7 @@ OneClient::OneClient(const QString &hostname, quint16 port, const QString &usern
 
     client->setClientId(client_id);
     client->setUsername(u);
-    client->setPassword(p.toLatin1());
+    client->setPassword(p.toUtf8());
     client->setCleanSession(cleanSession);
 
     int keepAlive = 60;
