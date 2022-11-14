@@ -4,7 +4,7 @@ QT += network qmqtt
 CONFIG += c++11 console
 CONFIG -= app_bundle
 
-VERSION = 1.0.3
+VERSION = 1.0.4
 DEFINES += APPLICATION_VERSION=\\\"$$VERSION\\\"
 
 # The following define makes your compiler emit warnings if you use
