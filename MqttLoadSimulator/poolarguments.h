@@ -22,6 +22,7 @@ struct PoolArguments
     bool incrementTopicPerBurst = false;
     QString topic;
     uint qos;
+    bool retain = false;
     QString clientid;
     bool cleanSession = true;
 };

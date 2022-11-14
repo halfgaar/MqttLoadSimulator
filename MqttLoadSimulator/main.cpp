@@ -82,6 +82,9 @@ int main(int argc, char *argv[])
     QCommandLineOption qosOption("qos", "QoS of publish and subscribe. Default: 0", "qos", "0");
     parser.addOption(qosOption);
 
+    QCommandLineOption retainOption("retain", "Set retain flag on messages");
+    parser.addOption(retainOption);
+
     QCommandLineOption clientidOption("client-id", "Fixed client ID. Because MQTT is forced to disconnect on existing client ID, you can use this to "
                                                    "brute-force test session hand-over/destruction. Default: random", "clientid");
     parser.addOption(clientidOption);
@@ -171,6 +174,7 @@ int main(int argc, char *argv[])
         activePoolArgs.overrideReconnectInterval = overrideReconnectInterval;
         activePoolArgs.topic = parser.value(topic);
         activePoolArgs.qos = qos;
+        activePoolArgs.retain = parser.isSet(retainOption);
         activePoolArgs.incrementTopicPerBurst = parser.isSet(incrementTopicPerBurst);
         activePoolArgs.clientid = parser.value(clientidOption);
         activePoolArgs.cleanSession = !parser.isSet(disableCleanSessionOption);

@@ -27,6 +27,7 @@ class OneClient : public QObject
     QString subscribeTopic;
     QString payloadBase;
     const uint qos;
+    const bool retain;
 
     Counters counters;
 
@@ -55,7 +56,7 @@ private slots:
 public:
     OneClient(const QString &hostname, quint16 port, const QString &username, const QString &password, bool pub_and_sub, int clientNr, const QString &clientIdPart,
               bool ssl, const QString &clientPoolRandomId, const int totalClients, const int delay, int burst_interval, const uint burst_spread,
-              int burst_size, int overrideReconnectInterval, const QString &topic, uint qos, bool incrementTopicPerBurst,
+              int burst_size, int overrideReconnectInterval, const QString &topic, uint qos, bool retain, bool incrementTopicPerBurst,
               const QString &clientid, bool cleanSession, QObject *parent = nullptr);
     ~OneClient();
 
