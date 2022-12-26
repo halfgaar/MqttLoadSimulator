@@ -46,6 +46,12 @@ int main(int argc, char *argv[])
     QCommandLineOption sslOption("ssl", "Enable SSL. Always insecure mode.");
     parser.addOption(sslOption);
 
+    QCommandLineOption clientCertificateOption("client-certificate", "Client certificate to be presented to the server for authentication", "path");
+    parser.addOption(clientCertificateOption);
+
+    QCommandLineOption clientPrivateKeyOption("client-private-key", "Private key belonging to the client certificate above.", "path");
+    parser.addOption(clientPrivateKeyOption);
+
     QCommandLineOption amountActiveOption("amount-active", "Amount of active clients. Default: 1.", "amount", "1");
     parser.addOption(amountActiveOption);
 
@@ -139,6 +145,24 @@ int main(int argc, char *argv[])
                 port = 8883;
         }
 
+        if (parser.isSet(clientCertificateOption) ^ parser.isSet(clientPrivateKeyOption))
+        {
+            throw ArgumentException(QString("When you specify '%1', you also have to specify '%2'").
+                                    arg(clientCertificateOption.names().first(), clientPrivateKeyOption.names().first()).toStdString());
+        }
+
+        const QString clientCertPath = parser.value(clientCertificateOption);
+        const QString clientPrivateKeyPath = parser.value(clientPrivateKeyOption);
+
+        if (parser.isSet(clientCertificateOption) || parser.isSet(clientPrivateKeyOption))
+        {
+            QFile clientCertFile(clientCertPath);
+            QFile clientPrivateKeyFile(clientPrivateKeyPath);
+
+            if (!clientCertFile.open(QFile::ReadOnly) || !clientPrivateKeyFile.open(QFile::ReadOnly))
+                throw ArgumentException("Can't read client cert or private key");
+        }
+
         if (parser.isSet(verboseOption))
         {
             Globals::verbose = true;
@@ -168,6 +192,8 @@ int main(int argc, char *argv[])
         activePoolArgs.clientIdPart = "active";
         activePoolArgs.delay = delay;
         activePoolArgs.ssl = ssl;
+        activePoolArgs.clientCertificatePath = clientCertPath;
+        activePoolArgs.clientPrivateKeyPath = clientPrivateKeyPath;
         activePoolArgs.burst_interval = burstInterval;
         activePoolArgs.burst_spread = burst_spread;
         activePoolArgs.burst_size = burstSize;

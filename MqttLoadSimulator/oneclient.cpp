@@ -2,16 +2,19 @@
 #include "utils.h"
 #include "iostream"
 #include <QSslConfiguration>
+#include <QFile>
+#include <QSslKey>
 
 #include "globals.h"
 #include "clientnumberpool.h"
+
 
 thread_local QHash<QString, QHostInfo> OneClient::dnsCache;
 
 OneClient::OneClient(const QString &hostname, quint16 port, const QString &username, const QString &password, bool pub_and_sub, int clientNr, const QString &clientIdPart,
                      bool ssl, const QString &clientPoolRandomId, const int totalClients, const int delay, int burst_interval, const uint burst_spread,
                      int burst_size, int overrideReconnectInterval, const QString &topic, uint qos, bool retain, bool incrementTopicPerBurst,
-                     const QString &clientid, bool cleanSession, QObject *parent) :
+                     const QString &clientid, bool cleanSession, const QString &clientCertPath, const QString &clientPrivateKeyPath, QObject *parent) :
     QObject(parent),
     client_id(!clientid.isEmpty() ? clientid : QString("%1_%2_%3_%4").arg(QHostInfo::localHostName()).arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
     clientNr(clientNr),
@@ -29,6 +32,24 @@ OneClient::OneClient(const QString &hostname, quint16 port, const QString &usern
     {
         QSslConfiguration sslConfig = QSslConfiguration::defaultConfiguration();
         sslConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
+
+        if (!clientCertPath.isEmpty() || !clientPrivateKeyPath.isEmpty())
+        {
+            QFile fcert(clientCertPath);
+            if (!fcert.open(QFile::ReadOnly))
+                throw std::runtime_error("Error reading client certificate");
+            const QByteArray fcertData  = fcert.readAll();
+            QSslCertificate _cert(fcertData);
+
+            QFile fkey(clientPrivateKeyPath);
+            if (!fkey.open(QFile::ReadOnly))
+                throw std::runtime_error("Error reading private key");
+            const QByteArray keyData = fkey.readAll();
+            QSslKey _sslKey(keyData, QSsl::KeyAlgorithm::Rsa);
+
+            sslConfig.setLocalCertificate(_cert);
+            sslConfig.setPrivateKey(_sslKey);
+        }
 
         this->client = new QMQTT::Client(hostname, port, sslConfig, true);
     }

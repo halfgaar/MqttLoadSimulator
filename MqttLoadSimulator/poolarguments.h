@@ -15,6 +15,8 @@ struct PoolArguments
     QString clientIdPart;
     uint delay = 0;
     bool ssl = false;
+    QString clientCertificatePath;
+    QString clientPrivateKeyPath;
     int burst_interval = 0;
     uint burst_spread = 0;
     int burst_size = 0;
