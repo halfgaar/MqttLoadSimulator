@@ -3,6 +3,8 @@
 #include <QThread>
 #include <utils.h>
 
+#define PUBLISH_INTERVAL 10
+
 ClientPool::ClientPool(const PoolArguments &args) : QObject(nullptr),
     delay(args.delay)
 {
@@ -20,6 +22,8 @@ ClientPool::ClientPool(const PoolArguments &args) : QObject(nullptr),
     if (hostnameList.isEmpty() && !args.hostname.isEmpty())
         hostnameList.append(args.hostname);
 
+    this->clients.reserve(args.amount);
+
     for (int i = 0; i < args.amount; i++)
     {
         const QString &hostname = hostnameList[i % hostnameList.size()];
@@ -30,6 +34,10 @@ ClientPool::ClientPool(const PoolArguments &args) : QObject(nullptr),
         clients.append(oneClient);
         clientsToConnect.push(oneClient);
     }
+
+    publishTimer.setInterval(PUBLISH_INTERVAL);
+    connect(&publishTimer, &QTimer::timeout, this, &ClientPool::publishNextRound);
+    publishTimer.start();
 }
 
 ClientPool::~ClientPool()
@@ -81,5 +89,17 @@ void ClientPool::startClients()
     if (clientsToConnect.empty())
     {
         connectNextBatchTimer.stop();
+    }
+}
+
+void ClientPool::publishNextRound()
+{
+    // TODO: ordered map and break if next client in future?
+
+    auto now = std::chrono::steady_clock::now();
+
+    for(OneClient *c : clients)
+    {
+        c->publishIfIntervalExpired(now);
     }
 }

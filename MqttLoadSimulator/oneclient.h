@@ -5,6 +5,7 @@
 #include <QTimer>
 #include <QHostInfo>
 #include <QHash>
+#include <chrono>
 
 #include "counters.h"
 
@@ -15,7 +16,6 @@ class OneClient : public QObject
     QString client_id;
     int clientNr = 0;
     bool pub_and_sub = false;
-    QTimer publishTimer;
 
     QMQTT::Client *client = nullptr;
     QTimer reconnectTimer;
@@ -43,6 +43,10 @@ class OneClient : public QObject
 
     quint16 packetid = 0;
 
+    bool startPublishing = false;
+    std::chrono::milliseconds publishInterval;
+    std::chrono::time_point<std::chrono::steady_clock> nextPublish;
+
 private:
     quint16 getNextPacketPacketID();
 
@@ -61,6 +65,7 @@ public:
     ~OneClient();
 
     Counters getCounters() const;
+    void publishIfIntervalExpired(std::chrono::time_point<std::chrono::steady_clock> now);
 
 public slots:
     void connectToHost();

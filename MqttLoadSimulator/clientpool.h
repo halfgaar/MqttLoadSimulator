@@ -4,6 +4,7 @@
 #include <QObject>
 #include <oneclient.h>
 #include <QStack>
+#include <QVector>
 
 #include "counters.h"
 #include "poolarguments.h"
@@ -12,9 +13,10 @@ class ClientPool : public QObject
 {
     Q_OBJECT
 
-    QList<OneClient*> clients;
+    QVector<OneClient*> clients;
     QStack<OneClient*> clientsToConnect;
     QTimer connectNextBatchTimer;
+    QTimer publishTimer;
     uint delay;
     QString clientPoolRandomId;
 public:
@@ -28,6 +30,9 @@ signals:
 
 public slots:
     void startClients();
+
+private slots:
+    void publishNextRound();
 };
 
 #endif // CLIENTPOOL_H

@@ -19,7 +19,6 @@ OneClient::OneClient(const QString &hostname, quint16 port, const QString &usern
     client_id(!clientid.isEmpty() ? clientid : QString("%1_%2_%3_%4").arg(QHostInfo::localHostName()).arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
     clientNr(clientNr),
     pub_and_sub(pub_and_sub),
-    publishTimer(this),
     clientPoolRandomId(clientPoolRandomId),
     burstSize(burst_size),
     topicBase(topic),
@@ -127,9 +126,8 @@ OneClient::OneClient(const QString &hostname, quint16 port, const QString &usern
     int interval = burst_interval + spread;
     interval = std::max<int>(1, interval);
 
-    publishTimer.setInterval(interval);
-    publishTimer.setSingleShot(false);
-    connect(&publishTimer, &QTimer::timeout, this, &OneClient::onPublishTimerTimeout);
+    this->publishInterval = std::chrono::milliseconds(interval);
+    this->nextPublish = std::chrono::steady_clock::now() + std::chrono::milliseconds(interval);
 
     const int totalConnectionDuration = ((totalClients + 1) / (1000.0 / (delay + 1))) * 1000;
     const int reconnectInterval = overrideReconnectInterval >= 0 ? overrideReconnectInterval : 5000 + (qrand() % totalConnectionDuration);
@@ -151,6 +149,23 @@ OneClient::~OneClient()
 Counters OneClient::getCounters() const
 {
     return counters;
+}
+
+void OneClient::publishIfIntervalExpired(std::chrono::time_point<std::chrono::steady_clock> now)
+{
+    if (!_connected)
+        return;
+
+    if (!startPublishing)
+        return;
+
+    if (this->nextPublish > now)
+        return;
+
+    this->nextPublish = now + this->publishInterval;
+
+    onPublishTimerTimeout();
+
 }
 
 void OneClient::connectToHost()
@@ -197,7 +212,7 @@ void OneClient::connected()
                 std::cout << qPrintable(QString("Publishing to '%1'\n").arg(publishTopic));
         }
         client->subscribe(subscribeTopic, this->qos);
-        publishTimer.start();
+        startPublishing = true;
     }
     else
     {
