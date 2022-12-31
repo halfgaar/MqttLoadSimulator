@@ -27,6 +27,7 @@ struct PoolArguments
     bool retain = false;
     QString clientid;
     bool cleanSession = true;
+    bool deferPublishing = false;
 };
 
 #endif // POOLARGUMENTS_H

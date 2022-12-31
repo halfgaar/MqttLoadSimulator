@@ -83,8 +83,8 @@ OneClient::OneClient(const QString &hostname, quint16 port, const QString &usern
     {
         if (pub_and_sub)
         {
-            publishTopic = QString("loadtester/clientpool_%1/%2/hellofromtheloadtester").arg(this->clientPoolRandomId).arg(this->clientNr);
-            subscribeTopic = QString("loadtester/clientpool_%1/%2/#").arg(this->clientPoolRandomId).arg(this->clientNr - 1);
+            publishTopic = QString("loadtester/clientpool_%1/%2/hellofromtheloadtester").arg(this->clientPoolRandomId).arg((this->clientNr + 1) % totalClients);
+            subscribeTopic = QString("loadtester/clientpool_%1/%2/#").arg(this->clientPoolRandomId).arg(this->clientNr);
         }
         else
         {
@@ -283,6 +283,9 @@ void OneClient::onPublishTimerTimeout()
 {
     // https://github.com/emqx/qmqtt/issues/230
     if (!_connected)
+        return;
+
+    if (this->publishTopic.isEmpty())
         return;
 
     for (int i = 0; i < burstSize; i++)

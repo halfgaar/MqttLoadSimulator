@@ -104,6 +104,9 @@ int main(int argc, char *argv[])
     QCommandLineOption incrementTopicPerBurst("increment-topic-per-burst", "Use the '%1' in --topic to increment per publish burst.");
     parser.addOption(incrementTopicPerBurst);
 
+    QCommandLineOption deferPublishing("defer-publishing", "Defer publishing (within thread) until all clients are connected. Helps the 'recv - sent' stat.");
+    parser.addOption(deferPublishing);
+
     QCommandLineOption verboseOption("verbose", "Print debugging info. Warning: ugly.");
     parser.addOption(verboseOption);
 
@@ -204,6 +207,7 @@ int main(int argc, char *argv[])
         activePoolArgs.incrementTopicPerBurst = parser.isSet(incrementTopicPerBurst);
         activePoolArgs.clientid = parser.value(clientidOption);
         activePoolArgs.cleanSession = !parser.isSet(disableCleanSessionOption);
+        activePoolArgs.deferPublishing = parser.isSet(deferPublishing);
         a.createPoolsBasedOnArgument(activePoolArgs);
 
         PoolArguments passivePoolArgs(activePoolArgs);

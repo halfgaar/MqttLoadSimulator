@@ -140,16 +140,19 @@ void LoadSimulator::onStatsTimeout()
 
     Drift drift = getAvgDriftLoop();
 
+    const uint64_t diffCount = std::max(cnt.publish, cnt.received) - std::min(cnt.publish, cnt.received);
+
     std::string driftString = getDriftString(drift);
     std::string line = formatString("\rVersion: %s. \033[01mClients\033[00m: %d on %d threads. "
                                     "\033[01mSent\033[00m: %ld (\033[01;36m%ld/s\033[00m). "
                                     "\033[01mRecv\033[00m: %ld (\033[01;36m%ld/s\033[00m). "
+                                    "\033[01mRecv-Sent\033[00m: %ld. "
                                     "\033[01mConnects\033[00m: %ld (\033[01;36m%ld/s\033[00m). "
                                     "\033[01mDisconnects\033[00m: %ld (\033[01;36m%ld/s\033[00m). "
                                     "\033[01mErrors\033[00m: %ld (\033[01;36m%ld/s\033[00m). "
                                     "\nThread loop drift: %s",
                                     applicationVersion().toStdString().c_str(),
-                                    totalClients, threads.size(), cnt.publish, diff.publish, cnt.received, diff.received, cnt.connect, diff.connect,
+                                    totalClients, threads.size(), cnt.publish, diff.publish, cnt.received, diff.received, diffCount, cnt.connect, diff.connect,
                                     cnt.disconnect, diff.disconnect, cnt.error, diff.error, driftString.c_str());
 
     if (firstTimePrinted)

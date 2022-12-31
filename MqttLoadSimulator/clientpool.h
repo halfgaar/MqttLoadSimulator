@@ -18,6 +18,7 @@ class ClientPool : public QObject
     QTimer connectNextBatchTimer;
     QTimer publishTimer;
     uint delay;
+    bool deferPublishing;
     QString clientPoolRandomId;
 public:
     explicit ClientPool(const PoolArguments &args);

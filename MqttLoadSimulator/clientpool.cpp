@@ -6,7 +6,8 @@
 #define PUBLISH_INTERVAL 10
 
 ClientPool::ClientPool(const PoolArguments &args) : QObject(nullptr),
-    delay(args.delay)
+    delay(args.delay),
+    deferPublishing(args.deferPublishing)
 {
     this->clientPoolRandomId = GetRandomString();
 
@@ -32,12 +33,14 @@ ClientPool::ClientPool(const PoolArguments &args) : QObject(nullptr),
                                              args.qos, args.retain, args.incrementTopicPerBurst, args.clientid, args.cleanSession, args.clientCertificatePath,
                                              args.clientPrivateKeyPath);
         clients.append(oneClient);
-        clientsToConnect.push(oneClient);
+        clientsToConnect.push_back(oneClient);
     }
 
     publishTimer.setInterval(PUBLISH_INTERVAL);
     connect(&publishTimer, &QTimer::timeout, this, &ClientPool::publishNextRound);
-    publishTimer.start();
+
+    if (!this->deferPublishing)
+        publishTimer.start();
 }
 
 ClientPool::~ClientPool()
@@ -89,6 +92,9 @@ void ClientPool::startClients()
     if (clientsToConnect.empty())
     {
         connectNextBatchTimer.stop();
+
+        if (deferPublishing)
+            publishTimer.start();
     }
 }
 
