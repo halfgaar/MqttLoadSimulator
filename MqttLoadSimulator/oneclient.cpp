@@ -4,6 +4,7 @@
 #include <QSslConfiguration>
 #include <QFile>
 #include <QSslKey>
+#include <iostream>
 
 #include "globals.h"
 #include "clientnumberpool.h"
@@ -59,8 +60,24 @@ OneClient::OneClient(const QString &hostname, quint16 port, const QString &usern
             dnsCache[hostname] = QHostInfo::fromName(hostname);
         }
 
-        // Ehm, why the difference in QMTT::Client's overloaded constructors for SSL and non-SSL?
-        this->client = new QMQTT::Client(dnsCache[hostname].addresses().first(), port);
+        auto addresses = dnsCache[hostname].addresses();
+
+        if (addresses.empty())
+        {
+            std::cerr << "Hostname '" << hostname.toStdString() << "' doesn't resolve to anything" << std::endl;
+
+            // Just making a dummy client because I can't throw exceptions because we're calling this from slots.
+            this->client = new QMQTT::Client("dummy", 1883, false, true, nullptr);
+
+            return;
+        }
+        else
+        {
+            const int ran = qrand() % addresses.length();
+
+            // Ehm, why the difference in QMTT::Client's overloaded constructors for SSL and non-SSL?
+            this->client = new QMQTT::Client(addresses.at(ran), port);
+        }
     }
 
     if (!topic.isEmpty())
