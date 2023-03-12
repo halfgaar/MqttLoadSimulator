@@ -1,3 +1,22 @@
+/*
+This file is part of MqttLoadSimulator
+Copyright (C) 2023  Wiebe Cazemier
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; version 2.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+02110-1301, USA.
+*/
+
 #include <QtCore>
 #include "clientpool.h"
 #include <iostream>
@@ -113,6 +132,9 @@ int main(int argc, char *argv[])
     QCommandLineOption versionOption("version", "Show version.");
     parser.addOption(versionOption);
 
+    QCommandLineOption licenseOption("license", "Show license.");
+    parser.addOption(licenseOption);
+
     parser.process(a);
 
     try
@@ -120,6 +142,13 @@ int main(int argc, char *argv[])
         if (parser.isSet(versionOption))
         {
             printf("MqttLoadSimulator Version: %s\n", qPrintable(QCoreApplication::applicationVersion()));
+            return 0;
+        }
+
+        if (parser.isSet(licenseOption))
+        {
+            puts("Copyright (C) 2019,2020,2021,2022,2023 Wiebe Cazemier.");
+            puts("License GPLv2: GNU GPL version 2. <https://www.gnu.org/licenses/old-licenses/gpl-2.0.html>.");
             return 0;
         }
 
