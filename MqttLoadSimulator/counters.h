@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 
 #include <stdint.h>
 #include <chrono>
+#include <vector>
 
 struct Counters
 {
@@ -34,6 +35,16 @@ struct Counters
     void operator+=(const Counters &rhs);
     Counters operator-(const Counters &rhs) const;
     void normalizeToPerSecond(std::chrono::milliseconds period);
+};
+
+struct LatencyValues
+{
+    std::chrono::microseconds min = std::chrono::microseconds(0);
+    std::chrono::microseconds avg = std::chrono::microseconds(0);
+    std::chrono::microseconds max = std::chrono::microseconds(0);
+
+    LatencyValues() = default;
+    LatencyValues(const std::vector<std::chrono::microseconds> &latencies);
 };
 
 #endif // COUNTERS_H

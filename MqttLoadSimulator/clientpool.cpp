@@ -84,6 +84,22 @@ int ClientPool::getClientCount() const
     return clients.size();
 }
 
+std::vector<LatencyValues> ClientPool::getAllLatencies() const
+{
+    std::vector<LatencyValues> result;
+    result.reserve(clients.size());
+
+    std::for_each(clients.begin(), clients.end(), [&result] (OneClient *c) {
+        LatencyValues l = c->getLatencies();
+        if (c->getPubAndSub() && l.min > std::chrono::microseconds(0))
+        {
+            result.push_back(c->getLatencies());
+        }
+    });
+
+    return result;
+}
+
 void ClientPool::startClients()
 {
     int i = 0;

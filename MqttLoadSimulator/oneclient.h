@@ -66,8 +66,12 @@ class OneClient : public QObject
     std::chrono::milliseconds publishInterval;
     std::chrono::time_point<std::chrono::steady_clock> nextPublish;
 
+    std::vector<std::chrono::microseconds> latencies = std::vector<std::chrono::microseconds>(100);
+    unsigned int latency_index = 0;
+
 private:
     quint16 getNextPacketPacketID();
+    void parseLatency(const QMQTT::Message& message);
 
 private slots:
 
@@ -85,6 +89,8 @@ public:
 
     Counters getCounters() const;
     void publishIfIntervalExpired(std::chrono::time_point<std::chrono::steady_clock> now);
+    LatencyValues getLatencies();
+    bool getPubAndSub() const;
 
 public slots:
     void connectToHost();

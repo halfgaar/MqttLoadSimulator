@@ -45,6 +45,7 @@ public:
 
     Counters getTotalCounters() const;
     int getClientCount() const;
+    std::vector<LatencyValues> getAllLatencies() const;
 
 signals:
 

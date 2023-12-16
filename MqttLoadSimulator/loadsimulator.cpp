@@ -142,6 +142,8 @@ void LoadSimulator::onStatsTimeout()
     Counters cnt;
     int totalClients = 0;
 
+    std::vector<LatencyValues> latencies;
+
     for(std::unique_ptr<PoolStarter> &s : starters)
     {
         std::unique_ptr<ClientPool> &c = s->getClientPool();
@@ -151,6 +153,38 @@ void LoadSimulator::onStatsTimeout()
 
         cnt += c->getTotalCounters();
         totalClients += c->getClientCount();
+
+        const std::vector<LatencyValues> l = c->getAllLatencies();
+        latencies.insert(latencies.end(), l.begin(), l.end());
+    }
+
+    LatencyValues latency_summary;
+
+    if (!latencies.empty())
+    {
+        std::vector<std::chrono::microseconds> mins;
+        mins.reserve(latencies.size());
+        std::vector<std::chrono::microseconds> avgs;
+        avgs.reserve(latencies.size());
+        std::vector<std::chrono::microseconds> maxs;
+        maxs.reserve(latencies.size());
+
+        std::for_each(latencies.begin(), latencies.end(), [&](LatencyValues &v) {
+            mins.push_back(v.min);
+            avgs.push_back(v.avg);
+            maxs.push_back(v.max);
+        });
+
+        auto mins_pos = std::min_element(mins.begin(), mins.end());
+        if (mins_pos != mins.end())
+            latency_summary.min = *mins_pos;
+
+        auto maxs_pos = std::max_element(maxs.begin(), maxs.end());
+        if (maxs_pos != maxs.end())
+            latency_summary.max = *maxs_pos;
+
+        const auto sum_avg = std::accumulate(avgs.begin(), avgs.end(), std::chrono::microseconds(0));
+        latency_summary.avg = sum_avg / avgs.size();
     }
 
     Counters diff = cnt - prevCounts;
@@ -162,20 +196,25 @@ void LoadSimulator::onStatsTimeout()
     const uint64_t diffCount = std::max(cnt.publish, cnt.received) - std::min(cnt.publish, cnt.received);
 
     std::string driftString = getDriftString(drift);
-    std::string line = formatString("\rVersion: %s. \033[01mClients\033[00m: %d on %d threads. "
+    std::string line = formatString("\rVersion: %s. \033[01m"
+                                    "\nClients\033[00m: %d on %d threads. "
                                     "\033[01mSent\033[00m: %ld (\033[01;36m%ld/s\033[00m). "
                                     "\033[01mRecv\033[00m: %ld (\033[01;36m%ld/s\033[00m). "
                                     "\033[01mRecv-Sent\033[00m: %ld. "
                                     "\033[01mConnects\033[00m: %ld (\033[01;36m%ld/s\033[00m). "
                                     "\033[01mDisconnects\033[00m: %ld (\033[01;36m%ld/s\033[00m). "
                                     "\033[01mErrors\033[00m: %ld (\033[01;36m%ld/s\033[00m). "
-                                    "\nThread loop drift: %s",
+                                    "\n\033[01mMessage latency\033[00m (min/avg/max): \033[01;36m%.1f ms\033[00m / \033[01;36m%.1f ms\033[00m / \033[01;36m%.1f ms\033[00m. "
+                                    "\n\033[01mThread loop drift\033[00m: %s",
                                     applicationVersion().toStdString().c_str(),
-                                    totalClients, threads.size(), cnt.publish, diff.publish, cnt.received, diff.received, diffCount, cnt.connect, diff.connect,
-                                    cnt.disconnect, diff.disconnect, cnt.error, diff.error, driftString.c_str());
+                                    totalClients, threads.size(), cnt.publish, diff.publish, cnt.received, diff.received, diffCount,
+                                    cnt.connect, diff.connect,
+                                    cnt.disconnect, diff.disconnect, cnt.error, diff.error,
+                                    latency_summary.min / 1000.0, latency_summary.avg / 1000.0, latency_summary.max / 1000.0,
+                                    driftString.c_str());
 
     if (firstTimePrinted)
-        fputs("\033[2K\033[A1\033[2K", stdout); // clear two lines in VT100 codes
+        fputs("\033[2K\033[A1\033[2K\033[A1\033[2K\033[A1\033[2K", stdout); // clear four lines in VT100 codes
     firstTimePrinted = true;
     fputs(line.c_str(), stdout);
     fflush(stdout);

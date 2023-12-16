@@ -18,6 +18,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 */
 
 #include "counters.h"
+#include <algorithm>
+#include <numeric>
 
 void Counters::operator+=(const Counters &rhs)
 {
@@ -50,4 +52,31 @@ void Counters::normalizeToPerSecond(std::chrono::milliseconds period)
     connect *= factor;
     disconnect *= factor;
     error *= factor;
+}
+
+LatencyValues::LatencyValues(const std::vector<std::chrono::microseconds> &latencies)
+{
+    if (latencies.empty())
+        return;
+
+    std::vector<std::chrono::microseconds> real_values;
+    real_values.reserve(latencies.size());
+
+    std::copy_if(latencies.begin(), latencies.end(), std::back_inserter(real_values), [] (const std::chrono::microseconds &x) {
+        return x > std::chrono::microseconds(0);
+    });
+
+    if (real_values.empty())
+        return;
+
+    auto pair = std::minmax_element(real_values.begin(), real_values.end());
+
+    if (pair.first == real_values.end())
+        return;
+
+    this->min = *pair.first;
+    this->max = *pair.second;
+
+    const auto sum = std::accumulate(real_values.begin(), real_values.end(), std::chrono::microseconds(0));
+    this->avg = sum / real_values.size();
 }
