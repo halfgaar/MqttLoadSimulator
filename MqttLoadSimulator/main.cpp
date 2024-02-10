@@ -18,7 +18,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 */
 
 #include <QtCore>
-#include "clientpool.h"
 #include <iostream>
 #include <QTimer>
 #include <QCommandLineParser>

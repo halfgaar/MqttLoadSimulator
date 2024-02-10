@@ -24,8 +24,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 
 #include "sys/random.h"
 
-#include "vector"
-
 QString GetRandomString()
 {
    const QString possibleCharacters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
