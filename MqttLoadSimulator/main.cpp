@@ -187,8 +187,11 @@ int main(int argc, char *argv[])
 
         if (parser.isSet(clientCertificateOption) ^ parser.isSet(clientPrivateKeyOption))
         {
+            const QStringList cnames = clientCertificateOption.names();
+            const QStringList knames = clientPrivateKeyOption.names();
+
             throw ArgumentException(QString("When you specify '%1', you also have to specify '%2'").
-                                    arg(clientCertificateOption.names().first(), clientPrivateKeyOption.names().first()).toStdString());
+                                    arg(cnames.first(), knames.first()).toStdString());
         }
 
         const QString clientCertPath = parser.value(clientCertificateOption);

@@ -43,7 +43,8 @@ parseIntOption(QCommandLineParser &parser, QCommandLineOption &option)
     T val = parser.value(option).toInt(&parsed);
     if (!parsed)
     {
-        throw ArgumentException(formatString("Option %s is not an int", qPrintable(option.names().first())));
+        const QStringList names = option.names();
+        throw ArgumentException(formatString("Option %s is not an int", qPrintable(names.first())));
     }
     return val;
 }
@@ -57,7 +58,8 @@ parseIntOption(QCommandLineParser &parser, QCommandLineOption &option)
     T val = parser.value(option).toUInt(&parsed);
     if (!parsed)
     {
-        throw ArgumentException(formatString("Option %s is not an uint", qPrintable(option.names().first())));
+        const QStringList names = option.names();
+        throw ArgumentException(formatString("Option %s is not an uint", qPrintable(names.first())));
     }
     return val;
 }
