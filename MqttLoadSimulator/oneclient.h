@@ -47,6 +47,7 @@ class OneClient : public QObject
     QString payloadBase;
     const uint qos;
     const bool retain;
+    int payloadMaxValue = 100;
 
     Counters counters;
 
@@ -91,6 +92,7 @@ public:
     void publishIfIntervalExpired(std::chrono::time_point<std::chrono::steady_clock> now);
     LatencyValues getLatencies();
     bool getPubAndSub() const;
+    void setPayloadFormat(const QString &s, int max_value);
 
 public slots:
     void connectToHost();

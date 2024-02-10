@@ -104,6 +104,14 @@ int main(int argc, char *argv[])
                                       "replaced by a number per client, modulo <topic-modulo>. Default: random per client", "topic");
     parser.addOption(topic);
 
+    QCommandLineOption payload_format("payload-format", "Override the payload string. Placeholders are available. "
+                                                        "Possible placeholders: %%utc_time%% for an UTC time string, %%value%% for a random int. Also "
+                                                        "include %%latency%% to put in the data required for latency calculation.", "format");
+    parser.addOption(payload_format);
+
+    QCommandLineOption payload_max_value("payload-max-value", "The maximum value of the %%value%% placeholder from the payload format. Default: 100", "value", "100");
+    parser.addOption(payload_max_value);
+
     QCommandLineOption qosOption("qos", "QoS of publish and subscribe. Default: 0", "qos", "0");
     parser.addOption(qosOption);
 
@@ -237,6 +245,13 @@ int main(int argc, char *argv[])
         activePoolArgs.clientid = parser.value(clientidOption);
         activePoolArgs.cleanSession = !parser.isSet(disableCleanSessionOption);
         activePoolArgs.deferPublishing = parser.isSet(deferPublishing);
+        activePoolArgs.payload_max_value = parseIntOption<int>(parser, payload_max_value);
+
+        if (parser.isSet(payload_format))
+        {
+            activePoolArgs.payloadFormat = parser.value(payload_format);
+        }
+
         a.createPoolsBasedOnArgument(activePoolArgs);
 
         PoolArguments passivePoolArgs(activePoolArgs);

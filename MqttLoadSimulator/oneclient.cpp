@@ -42,7 +42,7 @@ OneClient::OneClient(const QString &hostname, quint16 port, const QString &usern
     clientPoolRandomId(clientPoolRandomId),
     burstSize(burst_size),
     topicBase(topic),
-    payloadBase(QString("Client %1 publish counter: %2. Time:%3").arg(client_id)),
+    payloadBase(QString("Client %1 publish counter: %2. current_steady_time:%3").arg(client_id)),
     qos(qos),
     retain(retain),
     incrementTopicPerBurst(incrementTopicPerBurst)
@@ -215,6 +215,12 @@ bool OneClient::getPubAndSub() const
     return this->pub_and_sub;
 }
 
+void OneClient::setPayloadFormat(const QString &s, int max_value)
+{
+    this->payloadBase = s;
+    this->payloadMaxValue = max_value;
+}
+
 void OneClient::connectToHost()
 {
     if (!_connected) // client->isConnectedToHost() checks the wrong thing (whether socket is connected), and is true when SSL is still being negotiated.
@@ -242,7 +248,7 @@ quint16 OneClient::getNextPacketPacketID()
 void OneClient::parseLatency(const QMQTT::Message &message)
 {
     const QByteArray payload = message.payload();
-    const int time_index = payload.indexOf("Time:");
+    const int time_index = payload.indexOf("current_steady_time:");
 
     if (time_index < 0)
         return;
@@ -254,8 +260,22 @@ void OneClient::parseLatency(const QMQTT::Message &message)
     if (fields.size() < 2)
         return;
 
+    QString timestamp_numbers;
+    const QString string_tail = fields.at(1);
+
+    int end = 0;
+    for (QChar c : string_tail)
+    {
+        if (c.isDigit())
+            end++;
+        else
+            break;
+    }
+
+    timestamp_numbers = string_tail.left(end);
+
     bool ok = false;
-    long timestamp = fields.at(1).toLong(&ok);
+    long timestamp = timestamp_numbers.toLong(&ok);
 
     if (!ok)
         return;
@@ -363,8 +383,24 @@ void OneClient::onPublishTimerTimeout()
 
     for (int i = 0; i < burstSize; i++)
     {
-        long stamp = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
-        QString payload = payloadBase.arg(counters.publish).arg(stamp);
+        const long stamp = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+        QString payload;
+
+        if (payloadBase.contains("%1") || payloadBase.contains("%2"))
+        {
+            payload = payloadBase.arg(counters.publish).arg(stamp);
+        }
+        else
+        {
+            int value = rand() % this->payloadMaxValue;
+            payload = payloadBase;
+            payload.replace("%%utc_time%%", QString::fromStdString(utc_time()));
+            payload.replace("%%random_value%%", QString::number(value));
+
+            QString latency_stamp = QString("current_steady_time:%1").arg(stamp);
+            payload.replace("%%latency%%", latency_stamp);
+        }
+
         QMQTT::Message msg(getNextPacketPacketID(), publishTopic, payload.toUtf8(), this->qos, this->retain);
         client->publish(msg);
         counters.publish++;

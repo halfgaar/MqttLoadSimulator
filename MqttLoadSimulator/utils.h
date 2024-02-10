@@ -62,4 +62,6 @@ parseIntOption(QCommandLineParser &parser, QCommandLineOption &option)
     return val;
 }
 
+std::string utc_time();
+
 #endif // UTILS_H

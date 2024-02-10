@@ -51,8 +51,12 @@ ClientPool::ClientPool(const PoolArguments &args) : QObject(nullptr),
                                              args.amount, args.delay, args.burst_interval, args.burst_spread, args.burst_size, args.overrideReconnectInterval, args.topic,
                                              args.qos, args.retain, args.incrementTopicPerBurst, args.clientid, args.cleanSession, args.clientCertificatePath,
                                              args.clientPrivateKeyPath);
+
+        if (!args.payloadFormat.isEmpty())
+            oneClient->setPayloadFormat(args.payloadFormat, args.payload_max_value);
         clients.append(oneClient);
         clientsToConnect.push_back(oneClient);
+
     }
 
     publishTimer.setInterval(PUBLISH_INTERVAL);

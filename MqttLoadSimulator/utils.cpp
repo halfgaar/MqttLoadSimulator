@@ -17,6 +17,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 02110-1301, USA.
 */
 
+#include <sstream>
+#include <iomanip>
+
 #include "utils.h"
 
 #include "sys/random.h"
@@ -93,4 +96,26 @@ std::string formatString(const std::string str, ...)
 ArgumentException::ArgumentException(const std::string &s) : std::runtime_error(s)
 {
 
+}
+
+std::string utc_time()
+{
+    const auto now = std::chrono::system_clock::now();
+    const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+    const time_t timer = std::chrono::system_clock::to_time_t(now);
+
+    struct tm my_tm;
+    memset(&my_tm, 0, sizeof(struct tm));
+    struct tm *my_tm_result = gmtime_r(&timer, &my_tm);
+
+    if (!my_tm_result)
+        return std::string("localtime-failed");
+
+    std::ostringstream oss;
+
+    oss << std::put_time(my_tm_result, "%FT%T");
+    oss << '.' << std::setfill('0') << std::setw(3) << ms.count();
+    oss << "Z";
+
+    return oss.str();
 }

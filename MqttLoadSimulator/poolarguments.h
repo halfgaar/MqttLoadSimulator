@@ -47,6 +47,8 @@ struct PoolArguments
     QString clientid;
     bool cleanSession = true;
     bool deferPublishing = false;
+    QString payloadFormat;
+    int payload_max_value = 100;
 };
 
 #endif // POOLARGUMENTS_H
