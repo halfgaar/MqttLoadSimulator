@@ -143,7 +143,7 @@ void ClientPool::publishNextRound()
 
     auto now = std::chrono::steady_clock::now();
 
-    for(OneClient *c : clients)
+    for(OneClient *c : qAsConst(clients))
     {
         c->publishIfIntervalExpired(now);
     }
