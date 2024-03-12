@@ -33,7 +33,7 @@ thread_local QHash<QString, QHostInfo> OneClient::dnsCache;
 
 OneClient::OneClient(const QString &hostname, quint16 port, const QString &username, const QString &password, bool pub_and_sub, int clientNr, const QString &clientIdPart,
                      bool ssl, const QString &clientPoolRandomId, const int totalClients, const int delay, int burst_interval, const uint burst_spread,
-                     int burst_size, int overrideReconnectInterval, const QString &topic, uint qos, bool retain, bool incrementTopicPerBurst,
+                     int burst_size, int overrideReconnectInterval, const QString &topic, uint qos, bool retain, const IncrementCounterType incrementType,
                      const QString &clientid, bool cleanSession, const QString &clientCertPath, const QString &clientPrivateKeyPath, QObject *parent) :
     QObject(parent),
     client_id(!clientid.isEmpty() ? clientid : QString("%1_%2_%3_%4").arg(QHostInfo::localHostName()).arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
@@ -45,7 +45,7 @@ OneClient::OneClient(const QString &hostname, quint16 port, const QString &usern
     payloadBase(QString("Client %1 publish counter: %2. current_steady_time:%3").arg(client_id)),
     qos(qos),
     retain(retain),
-    incrementTopicPerBurst(incrementTopicPerBurst)
+    incrementType(incrementType)
 {
     if (ssl)
     {
@@ -101,26 +101,26 @@ OneClient::OneClient(const QString &hostname, quint16 port, const QString &usern
 
     if (!topic.isEmpty())
     {
-        if (topic.contains("%1"))
-        {
-            int nr = ClientNumberPool::getClientNr();
-            subscribeTopic = QString(topic).arg(nr);
-
-            if (pub_and_sub)
-                publishTopic = subscribeTopic;
-        }
-        else
-        {
-            subscribeTopic = topic;
-            publishTopic = topic;
-        }
+        topicBase = topic;
+        int nr = ClientNumberPool::getClientNr();
+        publishTopic = QString(topic).arg(nr);
+        subscribeTopic = publishTopic;
     }
     else
     {
         if (pub_and_sub)
         {
-            publishTopic = QString("loadtester/clientpool_%1/%2/hellofromtheloadtester").arg(this->clientPoolRandomId).arg((this->clientNr + 1) % totalClients);
-            subscribeTopic = QString("loadtester/clientpool_%1/%2/#").arg(this->clientPoolRandomId).arg(this->clientNr);
+            if (incrementType == IncrementCounterType::None)
+            {
+                topicBase = "";
+                publishTopic = QString("loadtester/clientpool_%1/client_%2/hellofromtheloadtester").arg(this->clientPoolRandomId).arg((this->clientNr + 1) % totalClients);
+                subscribeTopic = QString("loadtester/clientpool_%1/client_%2/#").arg(this->clientPoolRandomId).arg(this->clientNr);
+            }
+            else
+            {
+                topicBase = QString("loadtester/clientpool_%1/client_%2/topic_%3").arg(this->clientPoolRandomId).arg((this->clientNr + 1) % totalClients);
+                subscribeTopic = QString("loadtester/clientpool_%1/client_%2/#").arg(this->clientPoolRandomId).arg(this->clientNr);
+            }
         }
         else
         {
@@ -196,6 +196,9 @@ void OneClient::publishIfIntervalExpired(std::chrono::time_point<std::chrono::st
         return;
 
     if (this->nextPublish > now)
+        return;
+
+    if (!this->pub_and_sub)
         return;
 
     this->nextPublish = now + this->publishInterval;
@@ -299,8 +302,8 @@ void OneClient::connected()
         {
             std::cout << qPrintable(QString("Subscribing to '%1'\n").arg(subscribeTopic));
 
-            if (incrementTopicPerBurst && topicBase.contains("%1"))
-                std::cout << qPrintable(QString("Publishing to '%1' (and increasing number per publish)\n").arg(publishTopic));
+            if (incrementType > IncrementCounterType::None && topicBase.contains("%1"))
+                std::cout << qPrintable(QString("Publishing to '%1' (and increasing number per publish/burst)\n").arg(publishTopic));
             else
                 std::cout << qPrintable(QString("Publishing to '%1'\n").arg(publishTopic));
         }
@@ -378,9 +381,6 @@ void OneClient::onPublishTimerTimeout()
     if (!_connected)
         return;
 
-    if (this->publishTopic.isEmpty())
-        return;
-
     for (int i = 0; i < burstSize; i++)
     {
         const long stamp = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
@@ -401,16 +401,24 @@ void OneClient::onPublishTimerTimeout()
             payload.replace("%%latency%%", latency_stamp);
         }
 
-        QMQTT::Message msg(getNextPacketPacketID(), publishTopic, payload.toUtf8(), this->qos, this->retain);
+        QString ultimate_topic;
+
+        if (!this->topicBase.contains("%1") && !this->topicBase.contains("%%"))
+        {
+            ultimate_topic = this->publishTopic;
+        }
+        else
+        {
+            int nr = ClientNumberPool::getClientNr();
+            ultimate_topic = this->topicBase.arg(nr);
+            ultimate_topic.replace("%%clientid%%", this->client_id);
+        }
+
+        QMQTT::Message msg(getNextPacketPacketID(), ultimate_topic, payload.toUtf8(), this->qos, this->retain);
         client->publish(msg);
         counters.publish++;
     }
 
-    if (incrementTopicPerBurst)
-    {
-        const int nr = ClientNumberPool::getClientNr();
-        publishTopic = QString(topicBase).arg(nr);
-    }
 }
 
 void OneClient::onReceived(const QMQTT::Message &message)

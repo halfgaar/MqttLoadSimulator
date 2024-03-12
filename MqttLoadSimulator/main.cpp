@@ -130,6 +130,9 @@ int main(int argc, char *argv[])
     QCommandLineOption incrementTopicPerBurst("increment-topic-per-burst", "Use the '%1' in --topic to increment per publish burst.");
     parser.addOption(incrementTopicPerBurst);
 
+    QCommandLineOption incrementTopicPerMessage("increment-topic-per-message", "Use the '%1' in --topic to increment per message.");
+    parser.addOption(incrementTopicPerMessage);
+
     QCommandLineOption deferPublishing("defer-publishing", "Defer publishing (within thread) until all clients are connected. Helps the 'recv - sent' stat.");
     parser.addOption(deferPublishing);
 
@@ -157,6 +160,14 @@ int main(int argc, char *argv[])
             puts("Copyright (C) 2019,2020,2021,2022,2023 Wiebe Cazemier.");
             puts("License GPLv2: GNU GPL version 2. <https://www.gnu.org/licenses/old-licenses/gpl-2.0.html>.");
             return 0;
+        }
+
+        if (parser.isSet(incrementTopicPerBurst) && parser.isSet(incrementTopicPerMessage))
+        {
+            const QStringList a = incrementTopicPerBurst.names();
+            const QStringList b = incrementTopicPerMessage.names();
+            const QString msg = QString("%1 and %2 are mutually exclusive.").arg(a.constFirst(), b.constFirst());
+            throw ArgumentException(msg.toStdString());
         }
 
         quint16 port = parseIntOption<quint16>(parser, portOption);
@@ -243,7 +254,6 @@ int main(int argc, char *argv[])
         activePoolArgs.topic = parser.value(topic);
         activePoolArgs.qos = qos;
         activePoolArgs.retain = parser.isSet(retainOption);
-        activePoolArgs.incrementTopicPerBurst = parser.isSet(incrementTopicPerBurst);
         activePoolArgs.clientid = parser.value(clientidOption);
         activePoolArgs.cleanSession = !parser.isSet(disableCleanSessionOption);
         activePoolArgs.deferPublishing = parser.isSet(deferPublishing);
@@ -252,6 +262,16 @@ int main(int argc, char *argv[])
         if (parser.isSet(payload_format))
         {
             activePoolArgs.payloadFormat = parser.value(payload_format);
+        }
+
+        if (parser.isSet(incrementTopicPerBurst))
+        {
+            activePoolArgs.incrementCounterType = IncrementCounterType::PerBurst;
+        }
+
+        if (parser.isSet(incrementTopicPerMessage))
+        {
+            activePoolArgs.incrementCounterType = IncrementCounterType::PerPublish;
         }
 
         a.createPoolsBasedOnArgument(activePoolArgs);

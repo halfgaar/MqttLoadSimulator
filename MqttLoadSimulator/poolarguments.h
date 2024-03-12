@@ -22,6 +22,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 
 #include <QString>
 
+#include "globals.h"
+
 struct PoolArguments
 {
     QString hostname;
@@ -40,7 +42,6 @@ struct PoolArguments
     uint burst_spread = 0;
     int burst_size = 0;
     int overrideReconnectInterval = -1;
-    bool incrementTopicPerBurst = false;
     QString topic;
     uint qos;
     bool retain = false;
@@ -49,6 +50,7 @@ struct PoolArguments
     bool deferPublishing = false;
     QString payloadFormat;
     int payload_max_value = 100;
+    IncrementCounterType incrementCounterType = IncrementCounterType::None;
 };
 
 #endif // POOLARGUMENTS_H

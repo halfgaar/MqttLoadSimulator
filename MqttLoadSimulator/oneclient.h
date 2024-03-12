@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #include <QHash>
 #include <chrono>
 
+#include "globals.h"
 #include "counters.h"
 
 class OneClient : public QObject
@@ -41,7 +42,7 @@ class OneClient : public QObject
     QString clientPoolRandomId;
 
     const int burstSize;
-    const QString topicBase;
+    QString topicBase;
     QString publishTopic;
     QString subscribeTopic;
     QString payloadBase;
@@ -59,7 +60,7 @@ class OneClient : public QObject
     QString passwordBase;
     bool regenRandomUsername = false;
     bool regenRandomPassword = false;
-    const bool incrementTopicPerBurst;
+    const IncrementCounterType incrementType = IncrementCounterType::None;
 
     quint16 packetid = 0;
 
@@ -84,7 +85,7 @@ private slots:
 public:
     OneClient(const QString &hostname, quint16 port, const QString &username, const QString &password, bool pub_and_sub, int clientNr, const QString &clientIdPart,
               bool ssl, const QString &clientPoolRandomId, const int totalClients, const int delay, int burst_interval, const uint burst_spread,
-              int burst_size, int overrideReconnectInterval, const QString &topic, uint qos, bool retain, bool incrementTopicPerBurst,
+              int burst_size, int overrideReconnectInterval, const QString &topic, uint qos, bool retain, const IncrementCounterType incrementType,
               const QString &clientid, bool cleanSession, const QString &clientCertPath, const QString &clientPrivateKeyPath, QObject *parent = nullptr);
     ~OneClient();
 

@@ -20,6 +20,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
+enum class IncrementCounterType
+{
+    None,
+    PerBurst,
+    PerPublish
+};
 
 struct Globals
 {
