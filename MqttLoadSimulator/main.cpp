@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
         activePoolArgs.password = parser.value(passwordOption);
         activePoolArgs.pub_and_sub = true;
         activePoolArgs.amount = amountActive;
-        activePoolArgs.clientIdPart = "active";
+        activePoolArgs.clientIdPart = "act";
         activePoolArgs.delay = delay;
         activePoolArgs.ssl = ssl;
         activePoolArgs.clientCertificatePath = clientCertPath;
@@ -259,7 +259,7 @@ int main(int argc, char *argv[])
         PoolArguments passivePoolArgs(activePoolArgs);
         passivePoolArgs.pub_and_sub = false;
         passivePoolArgs.amount = amountPassive;
-        passivePoolArgs.clientIdPart = "passive";
+        passivePoolArgs.clientIdPart = "psv";
         a.createPoolsBasedOnArgument(passivePoolArgs);
 
         return a.exec();

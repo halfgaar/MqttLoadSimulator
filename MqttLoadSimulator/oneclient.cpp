@@ -31,12 +31,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 
 thread_local QHash<QString, QHostInfo> OneClient::dnsCache;
 
+QString generateClientId(const QString &clientIdPart, const int clientNr)
+{
+    const QString nr = QString::number(clientNr);
+    const QString rnd = GetRandomString(7);
+    const int remain = 23 - nr.length() - rnd.length() - clientIdPart.length();
+    const QString hostnamePart = QHostInfo::localHostName().left(remain);
+    const QString result = QString("%1%2%3%4").arg(clientIdPart, nr, hostnamePart, rnd);
+    return result;
+}
+
 OneClient::OneClient(const QString &hostname, quint16 port, const QString &username, const QString &password, bool pub_and_sub, int clientNr, const QString &clientIdPart,
                      bool ssl, const QString &clientPoolRandomId, const int totalClients, const int delay, int burst_interval, const uint burst_spread,
                      int burst_size, int overrideReconnectInterval, const QString &topic, uint qos, bool retain, bool incrementTopicPerBurst,
                      const QString &clientid, bool cleanSession, const QString &clientCertPath, const QString &clientPrivateKeyPath, QObject *parent) :
     QObject(parent),
-    client_id(!clientid.isEmpty() ? clientid : QString("%1_%2_%3_%4").arg(QHostInfo::localHostName()).arg(clientIdPart).arg(clientNr).arg(GetRandomString())),
+    client_id(!clientid.isEmpty() ? clientid : generateClientId(clientIdPart, clientNr)),
     clientNr(clientNr),
     pub_and_sub(pub_and_sub),
     clientPoolRandomId(clientPoolRandomId),

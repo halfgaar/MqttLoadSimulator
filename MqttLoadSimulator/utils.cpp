@@ -24,15 +24,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 
 #include "sys/random.h"
 
-QString GetRandomString()
+QString GetRandomString(int len)
 {
    const QString possibleCharacters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
-   const int randomStringLength = 12; // assuming you want random strings of 12 characters
 
-   std::vector<unsigned char> buf(randomStringLength);
-   ssize_t actual_len = getrandom(buf.data(), randomStringLength, 0);
+   std::vector<unsigned char> buf(len);
+   ssize_t actual_len = getrandom(buf.data(), len, 0);
 
-   if (actual_len < 0 || actual_len != randomStringLength)
+   if (actual_len < 0 || actual_len != len)
    {
        throw std::runtime_error("Error requesting random data");
    }

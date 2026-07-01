@@ -30,7 +30,7 @@ public:
     ArgumentException(const std::string &s);
 };
 
-QString GetRandomString();
+QString GetRandomString(int len=12);
 void seedQtrand();
 std::string formatString(const std::string str, ...);
 
