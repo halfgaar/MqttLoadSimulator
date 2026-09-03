@@ -34,6 +34,27 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #include "poolarguments.h"
 #include "clientnumberpool.h"
 
+void setlimits()
+{
+#ifdef Q_OS_LINUX
+    rlimit current {};
+    if (getrlimit(RLIMIT_NOFILE, &current) != 0)
+    {
+        std::cerr << "Failure to obtain current rlimit nofile. Not setting new limit." << std::endl;
+        return;
+    }
+
+    const rlim_t nofile = std::min<rlim_t>(current.rlim_max, 1000000);
+    std::cout << "Setting rlimit nofile to " << nofile << ", minimum of current hard limit (" << current.rlim_max << ") and 1M." << std::endl;
+    const struct rlimit v = { nofile, nofile };
+    if (setrlimit(RLIMIT_NOFILE, &v) < 0)
+    {
+        std::cerr << "WARNING: Changing ulimit failed" << std::endl;
+    }
+#endif
+}
+
+
 int main(int argc, char *argv[])
 {
     LoadSimulator a(argc, argv);
@@ -212,16 +233,7 @@ int main(int argc, char *argv[])
 
         ClientNumberPool::setModulo(modulo);
 
-#ifdef Q_OS_LINUX
-        rlim_t rlim = 1000000;
-        if (Globals::verbose)
-            printf("Setting ulimit nofile to %ld.\n", rlim);
-        struct rlimit v = { rlim, rlim };
-        if (setrlimit(RLIMIT_NOFILE, &v) != 0)
-        {
-            fputs(qPrintable("WARNING: Changing ulimit failed.\n"), stderr);
-        }
-#endif
+        setlimits();
 
         PoolArguments activePoolArgs;
         activePoolArgs.hostname = parser.value(hostnameOption);
